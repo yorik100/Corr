@@ -1,7 +1,7 @@
 {
-  "Name": "OpenXerath",
+  "Name": "OpenBrand",
   "File": "main.lua",
   "Version": 0.1,
   "Type": "Champ",
-  "Champions": ["Xerath"]
+  "Champions": ["Brand"]
 }
