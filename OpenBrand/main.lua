@@ -27,19 +27,12 @@ cb.add(cb.load, function()
 	local buffToCheck = {"MorganaE", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon"}
 	local selfBuffToCheck = {"SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
     local Brand = {}
-	local buffTable = {}
-	local buffTableAblaze = {}
 	local buffs = {}
 	local particleWList = {}
-	local particleWTimeList = {}
 	local debugList = {}
 	local drawRDamage = {}
-	local RDrawDamage = {}
 	local RKillable = {}
 	local drawRValue = {}
-	local RDrawDamageText = {}
-	local redColour = {}
-	local RShots = {}
 	local ElderBuff = nil
 	local hasCasted = false
 
@@ -119,7 +112,7 @@ cb.add(cb.load, function()
 						if not buff.caster or buff.caster.networkId == player.networkId then break end
 						if buff.name == name then
 							self:DebugPrint(hero.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
-							table.insert(buffTable, {unit = hero, unitId = hero.networkId, buff = buff})
+							buffs[hero.networkId .. buff.name] = buff
 							break
 						end
 					end
@@ -127,7 +120,7 @@ cb.add(cb.load, function()
 						if buff.caster and buff.caster.networkId ~= player.networkId then break end
 						if buff.name == name then
 							self:DebugPrint(hero.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. " from " .. buff.caster.name)
-							table.insert(buffTable, {unit = hero, unitId = hero.networkId, buff = buff})
+							buffs[hero.networkId .. buff.name] = buff
 							break
 						end
 					end
@@ -208,24 +201,17 @@ cb.add(cb.load, function()
 	local gameObject = _G.gameObject
 	function gameObject:getBuff(name)
 		table.insert(debugList, "GetBuff " .. name)
-		for _, buffInfo in pairs(buffTable) do
-			if buffInfo.buff and buffInfo.buff.valid and buffInfo.buff.name and buffInfo.buff.name == name and self.networkId == buffInfo.unitId then
+		local buff = buffs[self.networkId .. name]
+		if buff then
+			if buff.valid then
 				table.remove(debugList, #debugList)
-				return buffInfo.buff
+				return buff
+			else
+				buffs[self.networkId .. name] = nil
 			end
 		end
 		table.remove(debugList, #debugList)
 	end
-	-- function gameObject:getAblaze()
-		-- table.insert(debugList, "GetAblaze BrandAblaze")
-		-- for _, ablaze in pairs(buffTableAblaze) do
-			-- if ablaze.buff and ablaze.buff.valid and self and ablaze.unit and self.networkId == ablaze.unit.networkId then
-				-- table.remove(debugList, #debugList)
-				-- return ablaze.buff
-			-- end
-		-- end
-		-- table.remove(debugList, #debugList)
-	-- end
 	
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Brand:godBuffTime(target)
@@ -271,8 +257,8 @@ cb.add(cb.load, function()
 	function Brand:WillGetHitByW(target)
 		if not target then return false end
 		for key,value in ipairs(particleWList) do
-			local timeBeforeHit = particleWTimeList[key] + 0.625 - os.clock()
-			if value and (target.path and pred.positionAfterTime(target, math.max(0, timeBeforeHit)):distance2D(value.pos) <= self.wData.radius or target.pos:distance2D(value.pos) <= self.wData.radius) then
+			local timeBeforeHit = value.time + 0.625 - game.time
+			if value.obj and (target.path and pred.positionAfterTime(target, math.max(0, timeBeforeHit)):distance2D(value.obj.pos) <= self.wData.radius or target.pos:distance2D(value.obj.pos) <= self.wData.radius) then
 				return timeBeforeHit
 			end
 		end
@@ -436,8 +422,7 @@ cb.add(cb.load, function()
 	function Brand:OnCreate(object)
 		table.insert(debugList, "Create")
 		if string.find(object.name, "_POF_tar_green") and string.find(object.name, "Brand_") then
-			table.insert(particleWList, object)
-			table.insert(particleWTimeList, os.clock())
+			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
 		end
 		table.remove(debugList, #debugList)
@@ -456,10 +441,9 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Delete")
 		if string.find(object.name, "_POF_tar_green") and string.find(object.name, "Brand_") then
 			for key,value in ipairs(particleWList) do
-				if value.networkId == object.networkId then
+				if value.obj.networkId == object.networkId then
 					table.remove(particleWList, key)
-					table.remove(particleWTimeList, key)
-					disappearedE = os.clock()
+					disappearedE = game.time
 					self:DebugPrint("Removed particle W")
 					break
 				end
@@ -478,25 +462,6 @@ cb.add(cb.load, function()
 			print("[OpenDebug] Error found in" .. debugText)
 			debugList = {}
 		end
-		-- table.insert(debugList, "Buff Ablaze")
-		-- if buff.name and buff.name == "BrandAblaze" then
-			-- if gained then
-				-- table.insert(buffTableAblaze, {unit = source, unitId = source.networkId, buff = buff})
-				-- self:DebugPrint(source.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
-				-- table.remove(debugList, #debugList)
-				-- return
-			-- else
-				-- for key,value in ipairs(buffTableAblaze) do 
-					-- if source.networkId == buffTableAblaze[key].unit.networkId then
-						-- self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(value.buff.name) .. ")" .. (value.buff.caster and (" from " .. value.buff.caster.name) or ""))
-						-- table.remove(buffTableAblaze, key)
-						-- table.remove(debugList, #debugList)
-						-- return
-					-- end
-				-- end
-			-- end
-		-- end
-		-- table.remove(debugList, #debugList)
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
 		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
@@ -525,16 +490,11 @@ cb.add(cb.load, function()
 		end
 		if not buffFlag then table.remove(debugList, #debugList) return end
 		if gained then
-			table.insert(buffTable, {unit = source, unitId = source.networkId, buff = buff})
+			buffs[source.networkId .. buff.name] = buff
 			self:DebugPrint(source.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		else
-			for key,value in ipairs(buffTable) do
-				if source.networkId == buffTable[key].unitId and value.buff.networkId == buff.networkId and value.buff == buff then
-					table.remove(buffTable, key)
-					self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(value.buff.name) .. ")" .. (value.buff.caster and (" from " .. value.buff.caster.name) or ""))
-					break
-				end
-			end
+			buffs[source.networkId .. buff.name] = nil
+			self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		end
 		table.remove(debugList, #debugList)
     end
@@ -575,14 +535,9 @@ cb.add(cb.load, function()
 	table.insert(debugList, "DrawCalcs")
 	ElderBuff = myHero:getBuff("ElderDragonBuff")
 	table.insert(debugList, "DrawLoop")
-	killList = {}
 	drawRDamage = {}
-	RDrawDamage = {}
 	RKillable = {}
 	drawRValue = {}
-	RDrawDamageText = {}
-	RShots = {}
-	redColour = {}
 	for _, unit in pairs(ts.getTargets()) do
 		if unit.isHealthBarVisible and not unit.isDead then
 			if unit.skinName == "Yuumi" then
@@ -613,8 +568,7 @@ cb.add(cb.load, function()
 				if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
 					rDamage = totalHP
 				end
-				table.insert(drawRDamage, unit)
-				table.insert(RDrawDamage, rDamage)
+				table.insert(drawRDamage, {unit = unit, damage = rDamage})
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "DrawLoop2")
@@ -643,12 +597,9 @@ cb.add(cb.load, function()
 					-- Inspired from https://github.com/plsfixrito/KappAIO/blob/master/KappaAIO%20Reborn/Plugins/Champions/Darius/Darius.cs#L341
 						local red = 51*math.min(100, hpPercent)/20
 					if rDamage >= totalHP then
-						table.insert(RKillable, unit)
-						table.insert(RShots, shotsToKill)
+						table.insert(RKillable, {unit = unit, shots = shotsToKill})
 					else
-						table.insert(drawRValue, unit)
-						table.insert(RDrawDamageText, text)
-						table.insert(redColour, red)
+						table.insert(drawRValue, {unit = unit, text = text, red = red})
 					end
 				end
 			end
@@ -789,8 +740,8 @@ cb.add(cb.load, function()
 				local rCanBounce = false
 				if player and player.pos:distance2D(target.pos) <= 600 and player.pos:distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then rCanBounce = true end
 				if not rCanBounce then
-					for _, minion in pairs(objManager.attackableUnits.list) do
-						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and minion.isAIBase and (minion.isMinion or minion.isPet or minion.isHero) and minion.networkId ~= target.networkId and minion:isValidTarget(600, true, target.pos)
+					for _, minion in pairs(objManager.aiBases.list) do
+						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.networkId ~= target.networkId and minion:isValidTarget(600, true, target.pos)
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local minionAI = minion.asAIBase
 						if not validTarget or (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(enemyPos) > 600 then goto continue2 end          
@@ -877,8 +828,8 @@ cb.add(cb.load, function()
 			local chosenChamp = nil
 			local chosenMinion = nil
 			local distanceChamp = nil
-				for _, minion in pairs(objManager.attackableUnits.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and minion.isAIBase and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
+				for _, minion in pairs(objManager.aiBases.list) do
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
 						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
@@ -911,8 +862,8 @@ cb.add(cb.load, function()
 			local chosenMinion = nil
 			local rTotalDamage = nil
 			local distanceChamp = nil
-			for _, minion in pairs(objManager.attackableUnits.list) do
-				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and minion.isAIBase and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(600, true, player.pos)
+			for _, minion in pairs(objManager.aiBases.list) do
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(600, true, player.pos)
 				if not validTarget then goto continue6 end
 				for index, target in pairs(ts.getTargets()) do
 					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
@@ -1021,8 +972,8 @@ cb.add(cb.load, function()
 			local chosenChamp = nil
 			local chosenMinion = nil
 			local distanceChamp = nil
-				for _, minion in pairs(objManager.attackableUnits.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and minion.isAIBase and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
+				for _, minion in pairs(objManager.aiBases.list) do
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
 						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
@@ -1135,9 +1086,9 @@ cb.add(cb.load, function()
         end
 		table.insert(debugList, "DrawELoop")
 		if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
-			for _, minion in pairs(objManager.attackableUnits.list) do
+			for _, minion in pairs(objManager.aiBases.list) do
 				table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
-				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and minion.isAIBase and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(660, true, player.pos)
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(660, true, player.pos)
 				if not validTarget then goto continue1 end
 				for index, target in pairs(ts.getTargets()) do
 					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
@@ -1162,27 +1113,27 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "DrawCalcsDraw")
 		for key,value in ipairs(drawRDamage) do
-			if not value.isValid or not value.isHealthBarVisible or value.isDead then goto skipDamage end
-			value:drawDamage(RDrawDamage[key], graphics.argb(150,255,170,0))
+			if not value.unit.isValid or not value.unit.isHealthBarVisible or value.unit.isDead then goto skipDamage end
+			value.unit:drawDamage(value.damage, graphics.argb(150,255,170,0))
 			::skipDamage::
 		end
 		for key,value in ipairs(RKillable) do
-			if not value.isValid or not value.isHealthBarVisible or value.isDead then goto skipKillable end
-			pos = vec2(value.healthBarPosition.x + 70, value.healthBarPosition.y - 30)
-			graphics.drawText2D("Killable -> " .. RShots[key] .. (RShots[key] > 1 and " bounces" or " bounce"), 24, pos, graphics.argb(255,255, 0, 0))
+			if not value.unit.isValid or not value.unit.isHealthBarVisible or value.unit.isDead then goto skipKillable end
+			pos = vec2(value.unit.healthBarPosition.x + 70, value.unit.healthBarPosition.y - 30)
+			graphics.drawText2D("Killable -> " .. value.shots .. (value.shots > 1 and " bounces" or " bounce"), 24, pos, graphics.argb(255,255, 0, 0))
 			::skipKillable::
 		end
 		for key,value in ipairs(drawRValue) do
-			if not value.isValid or not value.isHealthBarVisible or value.isDead then goto skipDrawValue end
-			pos = vec2(value.healthBarPosition.x + 70, value.healthBarPosition.y - 30)
-			graphics.drawText2D(RDrawDamageText[key], 24, pos, graphics.argb(255,redColour[key], 255-redColour[key], 255-redColour[key]))
+			if not value.unit.isValid or not value.unit.isHealthBarVisible or value.unit.isDead then goto skipDrawValue end
+			pos = vec2(value.unit.healthBarPosition.x + 70, value.unit.healthBarPosition.y - 30)
+			graphics.drawText2D(value.text, 24, pos, graphics.argb(255, value.red, 255-value.red, 255-value.red))
 			::skipDrawValue::
 		end
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "Draw2")
 		if self.BrandMenu.drawings.draw_debug_w:get() then
 			for key,value in ipairs(particleWList) do
-				graphics.drawCircle(value.pos, self.wData.radius, 3, graphics.argb(255, 255, 127, 0))
+				graphics.drawCircle(value.obj.pos, self.wData.radius, 3, graphics.argb(255, 255, 127, 0))
 			end
 		end
 		table.remove(debugList, #debugList)
@@ -1204,7 +1155,7 @@ cb.add(cb.load, function()
 			table.insert(debugList, "CastSpell")
             -- Store the time when the spell was casted, which will be used inside Annie:IsCasting()
 			if spell.slot + 1 <= 4 then
-				self.castTimeClock[spell.slot + 1] = os.clock() + self.castTime[spell.slot + 1]
+				self.castTimeClock[spell.slot + 1] = game.time + self.castTime[spell.slot + 1]
 				self:DebugPrint("Casting spell: " .. spell.name)
 			end
 			table.remove(debugList, #debugList)
@@ -1215,7 +1166,7 @@ cb.add(cb.load, function()
     -- While a spell is being casted (0.25 sec most of the time), the spell state stays the same.
     function Brand:IsCasting()
         -- Get current time
-        local time = os.clock()
+        local time = game.time
         -- loop through all the spells
         for index, value in ipairs(self.castTimeClock) do
 		-- Logic so casting is considered as finished for the server, your ping
