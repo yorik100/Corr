@@ -27,27 +27,28 @@ cb.add(cb.load, function()
 	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon"}
 	local selfBuffToCheck = {"XerathArcanopulseChargeUp", "xerathrshots", "xerathascended2onhit", "SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
     local Xerath = {}
-	local buffTable = {}
 	local buffs = {}
 	local flaggingFlag = false
 	local flaggingPos = nil
 	local flaggingTime = 0
 	local rshots = 0
 	local particleWList = {}
-	local particleWTimeList = {}
 	local particleRList = {}
-	local particleRTimeList = {}
 	local particleEList = {}
-	local particleETimeList = {}
 	local particleFlag = false
 	local disappearedE = 0
 	local disappearedRTime = 0
-	local disappearedRObject = nil
+	local disappearedRObject = {
+		obj = nil,
+		time = nil
+	}
 	local oldValue = nil
 	local oldXValue = nil
 	local oldYValue = nil
-	local timeSinceUpdate = nil
-	local QcastPosition = nil
+	local instantQCast = {
+		pos = nil,
+		time = nil
+	}
 	local isUlting = nil
 	local QTarget = nil
 	local RTarget = nil
@@ -57,13 +58,9 @@ cb.add(cb.load, function()
 	local changed = nil
 	local changeTime = nil
 	local drawRDamage = {}
-	local RDrawDamage = {}
 	local RKillable = {}
-	local RShotsList = {}
 	local drawRValue = {}
-	local RDrawDamageText = {}
 	local killList = {}
-	local redColour = {}
 	local rBuff = nil
 	local qBuff = nil
 	local ElderBuff = nil
@@ -160,7 +157,7 @@ cb.add(cb.load, function()
 						if not buff.caster or buff.caster.networkId == player.networkId then break end
 						if buff.name == name then
 							self:DebugPrint(hero.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
-							table.insert(buffTable, {unit = hero, unitId = hero.networkId, buff = buff})
+							buffs[hero.networkId .. buff.name] = buff
 							break
 						end
 					end
@@ -168,7 +165,7 @@ cb.add(cb.load, function()
 						if buff.caster and buff.caster.networkId ~= player.networkId then break end
 						if buff.name == name then
 							self:DebugPrint(hero.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. " from " .. buff.caster.name)
-							table.insert(buffTable, {unit = hero, unitId = hero.networkId, buff = buff})
+							buffs[hero.networkId .. buff.name] = buff
 							break
 						end
 					end
@@ -261,10 +258,13 @@ cb.add(cb.load, function()
 	local gameObject = _G.gameObject
 	function gameObject:getBuff(name)
 		table.insert(debugList, "GetBuff " .. name)
-		for _, buffInfo in pairs(buffTable) do
-			if buffInfo.buff and buffInfo.buff.valid and buffInfo.buff.name and buffInfo.buff.name == name and self.networkId == buffInfo.unitId then
+		local buff = buffs[self.networkId .. name]
+		if buff then
+			if buff.valid then
 				table.remove(debugList, #debugList)
-				return buffInfo.buff
+				return buff
+			else
+				buffs[self.networkId .. name] = nil
 			end
 		end
 		table.remove(debugList, #debugList)
@@ -314,7 +314,7 @@ cb.add(cb.load, function()
 	function Xerath:WillGetHitByW(target)
 		if not target then return false end
 		for key,value in ipairs(particleWList) do
-			if value and (target.path and pred.positionAfterTime(target, math.max(0, (particleWTimeList[key] + 0.7 - os.clock()))):distance2D(value.pos) <= self.wData.radius or target.pos:distance2D(value.pos) <= self.wData.radius) then
+			if value.obj and (target.path and pred.positionAfterTime(target, math.max(0, (value.time + 0.7 - game.time))):distance2D(value.obj.pos) <= self.wData.radius or target.pos:distance2D(value.obj.pos) <= self.wData.radius) then
 				return true
 			end
 		end
@@ -323,14 +323,14 @@ cb.add(cb.load, function()
 	
 	function Xerath:WillGetHitByR(target)
 		if not target then return false end
-		if disappearedRObject and disappearedRTime + 0.125 > os.clock() then
-			local value = disappearedRObject
+		if disappearedRObject.obj and disappearedRObject.time and disappearedRObject.time + 0.099 > game.time then
+			local value = disappearedRObject.obj
 			if value and target.pos:distance2D(value.pos) and target.pos:distance2D(value.pos) <= self.rData.radius then
 				return true
 			end
 		end
 		for key,value in ipairs(particleRList) do
-			if value and (target.path and pred.positionAfterTime(target, math.max(0, (particleRTimeList[key] + 0.55 - os.clock()))):distance2D(value.pos) <= self.rData.radius or target.pos:distance2D(value.pos) <= self.rData.radius) then
+			if value.obj and (target.path and pred.positionAfterTime(target, math.max(0, (value.time + 0.55 - game.time))):distance2D(value.obj.pos) <= self.rData.radius or target.pos:distance2D(value.obj.pos) <= self.rData.radius) then
 				return true
 			end
 		end
@@ -338,7 +338,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Xerath:MissileE()
-		if particleEList[1] or (disappearedE and disappearedE + 0.066 >= os.clock()) then
+		if particleEList[1] or (disappearedE and disappearedE + 0.066 >= game.time) then
 			return true
 		else
 			return false
@@ -544,18 +544,15 @@ cb.add(cb.load, function()
 	function Xerath:OnCreate(object)
 		table.insert(debugList, "Create")
 		if string.find(object.name, "_R_aoe_reticle_green") and string.find(object.name, "Xerath_") then
-			table.insert(particleRList, object)
-			table.insert(particleRTimeList, os.clock())
+			table.insert(particleRList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle R")
 		end
 		if string.find(object.name, "_W_aoe_green") and string.find(object.name, "Xerath_") then
-			table.insert(particleWList, object)
-			table.insert(particleWTimeList, os.clock())
+			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
 		end
 		if object.name == "XerathMageSpearMissile" then
-			table.insert(particleEList, object)
-			table.insert(particleETimeList, os.clock())
+			table.insert(particleEList, {obj = object, time = game.time})
 			self:DebugPrint("Added missile E")
 		end
 		table.remove(debugList, #debugList)
@@ -574,22 +571,22 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Delete")
 		if object.name == "XerathMageSpearMissile" then
 			for key,value in ipairs(particleEList) do
-				if value.networkId == object.networkId then
+				if value.obj.networkId == object.networkId then
 					table.remove(particleEList, key)
-					table.remove(particleETimeList, key)
-					disappearedE = os.clock()
+					disappearedE = game.time
 					self:DebugPrint("Removed missile E")
 					break
 				end
 			end
 		end
 		if object.name == "XerathLocusPulse" then
-			for key,value in ipairs(particleRTimeList) do
-				if os.clock() > value + 0.55 then
-					disappearedRObject = particleRList[key]
+			for key,value in ipairs(particleRList) do
+				if game.time > value.time + 0.55 then
+					disappearedRObject = {
+						obj = value.obj,
+						time = game.time
+					}
 					table.remove(particleRList, key)
-					table.remove(particleRTimeList, key)
-					disappearedRTime = os.clock()
 					self:DebugPrint("Removed particle R")
 				end
 			end
@@ -638,16 +635,11 @@ cb.add(cb.load, function()
 		end
 		if not buffFlag then table.remove(debugList, #debugList) return end
 		if gained then
-			table.insert(buffTable, {unit = source, unitId = source.networkId, buff = buff})
+			buffs[source.networkId .. buff.name] = buff
 			self:DebugPrint(source.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		else
-			for key,value in ipairs(buffTable) do
-				if source.networkId == buffTable[key].unitId and value.buff.networkId == buff.networkId and value.buff == buff then
-					table.remove(buffTable, key)
-					self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(value.buff.name) .. ")" .. (value.buff.caster and (" from " .. value.buff.caster.name) or ""))
-					break
-				end
-			end
+			buffs[source.networkId .. buff.name] = nil
+			self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		end
 		table.remove(debugList, #debugList)
     end
@@ -662,6 +654,8 @@ cb.add(cb.load, function()
 			debugList = {}
 		end
 		table.insert(debugList, "Tick")
+		-- local targetTest = ts.getInRange(2000)
+		-- if targetTest and targetTest.activeSpell and targetTest.activeSpell.castEndTime > game.time then print(targetTest.activeSpell.castEndTime - game.time) end
 		hasCasted = false
 		self:DrawCalcs()
 		QTarget = nil
@@ -670,20 +664,20 @@ cb.add(cb.load, function()
 		local stunBuffList = {BuffType.Stun, BuffType.Silence, BuffType.Taunt, BuffType.Polymorph, BuffType.Fear, BuffType.Charm, BuffType.Suppression, BuffType.Knockup, BuffType.Knockback, BuffType.Asleep}
 		for key,buff in ipairs(stunBuffList) do
 			if player:hasBuffOfType(buff) then
-				timeSinceUpdate = nil
+				instantQCast.time = nil
 				table.remove(debugList, #debugList)
 				return
 			end
 		end
 		if self:IsCasting() then
 			orb.setAttackPause(0.075)
-			timeSinceUpdate = nil
+			instantQCast.time = nil
 			table.remove(debugList, #debugList)
 			return
 		end
 		if player.asHero.isWindingUp and myHero.mana/myHero.maxMana < 0.75 and myHero:getBuff("xerathascended2onhit") then table.remove(debugList, #debugList) return end
-		if timeSinceUpdate and timeSinceUpdate > game.time - 0.15 then
-			player:updateChargeableSpell(SpellSlot.Q, QcastPosition)
+		if instantQCast.time and instantQCast.time > game.time - 0.15 then
+			player:updateChargeableSpell(SpellSlot.Q, instantQCast.pos)
 			self:DebugPrint("Casted instant Q with range of " .. self.qData.range)
 			table.remove(debugList, #debugList)
 			return
@@ -716,12 +710,8 @@ cb.add(cb.load, function()
 	table.insert(debugList, "DrawLoop")
 	killList = {}
 	drawRDamage = {}
-	RDrawDamage = {}
 	RKillable = {}
 	drawRValue = {}
-	RDrawDamageText = {}
-	RShotsList = {}
-	redColour = {}
 	for _, unit in pairs(ts.getTargets()) do
 		if unit.isHealthBarVisible and not unit.isDead then
 			if unit.skinName == "Yuumi" then
@@ -752,8 +742,7 @@ cb.add(cb.load, function()
 				if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
 					rDamage = totalHP
 				end
-				table.insert(drawRDamage, unit)
-				table.insert(RDrawDamage, rDamage)
+				table.insert(drawRDamage, {unit = unit, damage = rDamage})
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "DrawLoop2")
@@ -783,12 +772,9 @@ cb.add(cb.load, function()
 					-- Inspired from https://github.com/plsfixrito/KappAIO/blob/master/KappaAIO%20Reborn/Plugins/Champions/Darius/Darius.cs#L341
 						local red = 51*math.min(100, hpPercent)/20
 					if rDamage >= totalHP then
-						table.insert(RKillable, unit)
-						table.insert(RShotsList, shotsToKill)
+						table.insert(RKillable, {unit = unit, shots = shotsToKill})
 					else
-						table.insert(drawRValue, unit)
-						table.insert(RDrawDamageText, text)
-						table.insert(redColour, red)
+						table.insert(drawRValue, {unit = unit, text = text, red = red})
 					end
 				end
 			end
@@ -828,19 +814,19 @@ cb.add(cb.load, function()
     function Xerath:Auto()
 		table.insert(debugList, "Auto")
 		table.insert(debugList, "Auto1")
-		for key,value in ipairs(particleRTimeList) do
-			if os.clock() > value + 0.8 then
-				disappearedRObject = particleRList[key]
+		for key,value in ipairs(particleRList) do
+			if game.time > value.time + 0.8 then
+				disappearedRObject = {
+						obj = value.obj,
+						time = game.time
+				}
 				table.remove(particleRList, key)
-				table.remove(particleRTimeList, key)
-				disappearedRTime = os.clock()
 				self:DebugPrint("Removed particle R")
 			end
 		end
-		for key,value in ipairs(particleWTimeList) do
-			if os.clock() > value + 0.75 then
+		for key,value in ipairs(particleWList) do
+			if game.time > value.time + 0.783 then
 				table.remove(particleWList, key)
-				table.remove(particleWTimeList, key)
 				self:DebugPrint("Removed particle W")
 			end
 		end
@@ -1103,9 +1089,11 @@ cb.add(cb.load, function()
 		local p = pred.getPrediction(target, self.qData)
 		if godBuffTime <= 0.45 + pingLatency and (noKillBuffTime <= 0.45 + pingLatency or QDamage < totalHP) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) then
 			if not timeSinceUpdate or timeSinceUpdate < game.time - 0.15 then
-				player:castSpell(SpellSlot.Q, game.cursorPos, true, false)
-				timeSinceUpdate = game.time
-				QcastPosition = p.castPosition
+				player:castSpell(SpellSlot.Q, game.cursorPos, true, true)
+				instantQCast = {
+					pos = p.castPosition,
+					time = game.time
+				}
 				hasCasted = true
 				self:DebugPrint("Casting insta Q on " .. mode)
 			end
@@ -1231,20 +1219,20 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "DrawCalcsDraw")
 		for key,value in ipairs(drawRDamage) do
-			if not value.isValid or not value.isHealthBarVisible or value.isDead then goto skipDamage end
-			value:drawDamage(RDrawDamage[key], graphics.argb(150,255,170,0))
+			if not value.unit.isValid or not value.unit.isHealthBarVisible or value.unit.isDead then goto skipDamage end
+			value.unit:drawDamage(value.damage, graphics.argb(150,255,170,0))
 			::skipDamage::
 		end
 		for key,value in ipairs(RKillable) do
-			if not value.isValid or not value.isHealthBarVisible or value.isDead then goto skipKillable end
-			pos = vec2(value.healthBarPosition.x + 70, value.healthBarPosition.y - 30)
-			graphics.drawText2D("Killable -> " .. RShotsList[key] .. (RShotsList[key] > 1 and " shots" or " shot"), 24, pos, graphics.argb(255,255, 0, 0))
+			if not value.unit.isValid or not value.unit.isHealthBarVisible or value.unit.isDead then goto skipKillable end
+			pos = vec2(value.unit.healthBarPosition.x + 70, value.unit.healthBarPosition.y - 30)
+			graphics.drawText2D("Killable -> " .. value.shots .. (value.shots > 1 and " shots" or " shot"), 24, pos, graphics.argb(255,255, 0, 0))
 			::skipKillable::
 		end
 		for key,value in ipairs(drawRValue) do
-			if not value.isValid or not value.isHealthBarVisible or value.isDead then goto skipDrawValue end
-			pos = vec2(value.healthBarPosition.x + 70, value.healthBarPosition.y - 30)
-			graphics.drawText2D(RDrawDamageText[key], 24, pos, graphics.argb(255,redColour[key], 255-redColour[key], 255-redColour[key]))
+			if not value.unit.isValid or not value.unit.isHealthBarVisible or value.unit.isDead then goto skipDrawValue end
+			pos = vec2(value.unit.healthBarPosition.x + 70, value.unit.healthBarPosition.y - 30)
+			graphics.drawText2D(value.text, 24, pos, graphics.argb(255, value.red, 255-value.red, 255-value.red))
 			::skipDrawValue::
 		end
 		table.remove(debugList, #debugList)
@@ -1264,20 +1252,20 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Draw3")
 		if self.XerathMenu.drawings.draw_debug_w:get() then
 			for key,value in ipairs(particleWList) do
-				graphics.drawCircle(value.pos, self.wData.radius, 3, graphics.argb(255, 0, 255, 255))
-				graphics.drawCircle(value.pos, self.w2Data.radius, 3, graphics.argb(255, 0, 127, 255))
+				graphics.drawCircle(value.obj.pos, self.wData.radius, 3, graphics.argb(255, 0, 255, 255))
+				graphics.drawCircle(value.obj.pos, self.w2Data.radius, 3, graphics.argb(255, 0, 127, 255))
 			end
 		end
 		if self.XerathMenu.drawings.draw_debug_r:get() then
 			for key,value in ipairs(particleRList) do
-				graphics.drawCircle(value.pos, self.rData.radius, 3, graphics.argb(255, 255, 127, 0))
+				graphics.drawCircle(value.obj.pos, self.rData.radius, 3, graphics.argb(255, 255, 127, 0))
 			end
 		end
 		if self.XerathMenu.drawings.draw_debug_e:get() then
 			for key,value in ipairs(particleEList) do
-				local missingLivingTime = os.clock() - particleETimeList[key]
-				local traveledDistance = missingLivingTime * value.missileSpeed
-				graphics.drawLine(value.startPosition:extend(value.endPosition, traveledDistance), value.endPosition, 3, graphics.argb(255, 255, 127, 125))
+				local missingLivingTime = game.time - value.time
+				local traveledDistance = missingLivingTime * value.obj.missileSpeed
+				graphics.drawLine(value.obj.startPosition:extend(value.obj.endPosition, traveledDistance), value.obj.endPosition, 3, graphics.argb(255, 255, 127, 125))
 			end
 		end
 		table.remove(debugList, #debugList)
@@ -1299,7 +1287,7 @@ cb.add(cb.load, function()
 			table.insert(debugList, "CastSpell")
             -- Store the time when the spell was casted, which will be used inside Annie:IsCasting()
 			if spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5) <= 5 then
-				self.castTimeClock[spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5)] = os.clock() + self.castTime[spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5)]
+				self.castTimeClock[spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5)] = game.time + self.castTime[spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5)]
 				self:DebugPrint("Casting spell: " .. spell.name)
 			end
 			if spell.name == "XerathLocusOfPower2" then
@@ -1313,7 +1301,7 @@ cb.add(cb.load, function()
     -- While a spell is being casted (0.25 sec most of the time), the spell state stays the same.
     function Xerath:IsCasting()
         -- Get current time
-        local time = os.clock()
+        local time = game.time
         -- loop through all the spells
         for index, value in ipairs(self.castTimeClock) do
 		-- Logic so casting is considered as finished for the server, your ping
