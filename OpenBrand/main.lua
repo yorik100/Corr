@@ -150,6 +150,7 @@ cb.add(cb.load, function()
         mm.combo:boolean('use_w', 'Use W', true)
         mm.combo:boolean('use_e', 'Use E', true)
 		mm.combo:boolean('use_r', 'Use R', true)
+		mm.combo:boolean('r_logic', 'Avoid wasting R', true)
 		mm.combo:boolean('use_r_minion', 'Use R on minion to kill with bounce', true)
 		mm.combo:slider('r_bounces', 'Min amount of R bounces to kill for combo R', 2, 0, 3, 1)
 		mm.combo:slider('r_aoe', 'Min amount of targets to combo R (AoE)', 2, 0, 5, 1)
@@ -716,6 +717,7 @@ cb.add(cb.load, function()
         if orb.isComboActive == false then return end
 		
 		table.insert(debugList, "Combo")
+		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
 			local validTarget =  target and not target.isZombie and target:isValidTarget(1100, true, player.pos)
 			if not validTarget then goto continue end
@@ -785,7 +787,6 @@ cb.add(cb.load, function()
 			local CCTime = pred.getCrowdControlledTime(target)
 			local dashing = target.path and target.path.isDashing
 			local godBuffTimeCombo = self:godBuffTime(target)
-			local pingLatency = game.latency/1000
 			local noKillBuffTimeCombo = self:noKillBuffTime(target)
 			local QDamage = self:GetDamageQ(target, 0)
 			local EDamage = self:GetDamageE(target, 0)
@@ -814,7 +815,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "ComboR")
-			if CanUseR and ((rKills and self.BrandMenu.combo.r_bounces:get() > 0) or (AoECount >= self.BrandMenu.combo.r_aoe:get() and self.BrandMenu.combo.r_aoe:get() > 0))and orb.predictHP(target, 0.2 + pingLatency) > 0 and godBuffTimeCombo <= 0.5 + pingLatency and (noKillBuffTimeCombo <= 0.5 + game.latency/1000 or not ((((totalHP) - EDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
+			if CanUseR and ((rKills and self.BrandMenu.combo.r_bounces:get() > 0 and (not self.BrandMenu.combo.r_logic:get() or pred.positionAfterTime(target, 0.1 + pingLatency):distance2D(player.pos) > 750)) or (AoECount >= self.BrandMenu.combo.r_aoe:get() and self.BrandMenu.combo.r_aoe:get() > 0))and orb.predictHP(target, 0.2 + pingLatency) > 0 and godBuffTimeCombo <= 0.5 + pingLatency and (noKillBuffTimeCombo <= 0.5 + game.latency/1000 or not ((((totalHP) - EDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				self:CastR(target, "combo", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, RDamage, totalHP, CCTime, target)
 				table.remove(debugList, #debugList)
 				break
@@ -890,7 +891,7 @@ cb.add(cb.load, function()
 						if ((totalHP) - rDamage)/target.maxHealth < 0.2 and ElderBuff then
 							rDamage = totalHP
 						end
-						if rDamage >= totalHP and shotsToKill <= self.BrandMenu.combo.r_bounces:get() then
+						if (not self.BrandMenu.combo.r_logic:get() or pred.positionAfterTime(target, 0.1 + pingLatency):distance2D(player.pos) > 750 or target.pos:distance2D(player.pos) > 750) and rDamage >= totalHP and shotsToKill <= self.BrandMenu.combo.r_bounces:get() then
 							local distanceToChamp = minion.pos:distance2D(target.pos)
 							if not priority or not distanceChamp or index < priority or (index == priority and distanceChamp > distanceToChamp) then
 								distanceChamp = distanceToChamp
