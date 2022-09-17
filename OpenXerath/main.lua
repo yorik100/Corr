@@ -1241,9 +1241,7 @@ cb.add(cb.load, function()
 			table.insert(killList, "Champion is killable in 3 shots")
 		end
 		for key,value in ipairs(killList) do
-			if not value.isValid or not value.isHealthBarVisible or value.isDead then goto skipList end
 			graphics.drawText2D(value, 24, vec2(self.XerathMenu.drawings.draw_r_list_x:get(), self.XerathMenu.drawings.draw_r_list_y:get()+50*key), graphics.argb(255,255, 0, 0))
-			::skipList::
 		end
 		if self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.drawings.draw_near_mouse_r_range:get() and (rBuff or (changeTime and changeTime + 2 > os.clock() or false)) then
 			graphics.drawCircle(game.cursorPos, self.XerathMenu.misc.near_mouse_r:get(), 1, graphics.argb(255, 255 , 127, 0))
