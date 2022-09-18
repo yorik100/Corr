@@ -109,18 +109,18 @@ cb.add(cb.load, function()
 				if buff and buff.valid then
 					-- print(buff.name)
 					for i, name in ipairs(buffToCheck) do
-						if not buff.caster or buff.caster.networkId == player.networkId then break end
+						if not buff.caster or buff.caster.handle == player.handle then break end
 						if buff.name == name then
 							self:DebugPrint(hero.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
-							buffs[hero.networkId .. buff.name] = buff
+							buffs[hero.handle .. buff.name] = buff
 							break
 						end
 					end
 					for i, name in ipairs(selfBuffToCheck) do
-						if buff.caster and buff.caster.networkId ~= player.networkId then break end
+						if buff.caster and buff.caster.handle ~= player.handle then break end
 						if buff.name == name then
 							self:DebugPrint(hero.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. " from " .. buff.caster.name)
-							buffs[hero.networkId .. buff.name] = buff
+							buffs[hero.handle .. buff.name] = buff
 							break
 						end
 					end
@@ -202,13 +202,13 @@ cb.add(cb.load, function()
 	local gameObject = _G.gameObject
 	function gameObject:getBuff(name)
 		table.insert(debugList, "GetBuff " .. name)
-		local buff = buffs[self.networkId .. name]
+		local buff = buffs[self.handle .. name]
 		if buff then
 			if buff.valid then
 				table.remove(debugList, #debugList)
 				return buff
 			else
-				buffs[self.networkId .. name] = nil
+				buffs[self.handle .. name] = nil
 			end
 		end
 		table.remove(debugList, #debugList)
@@ -248,7 +248,7 @@ cb.add(cb.load, function()
 				buffTime = buff.remainingTime
 			end
 		end
-		local GATime = ((target.characterState.statusFlags == 65537 and buffs["Time" .. target.networkId]) and buffs["Time" .. target.networkId] - game.time or 0)
+		local GATime = ((target.characterState.statusFlags == 65537 and buffs["Time" .. target.handle]) and buffs["Time" .. target.handle] - game.time or 0)
 		if GATime and buffTime < GATime then
 			buffTime = GATime
 		end
@@ -442,7 +442,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Delete")
 		if string.find(object.name, "_POF_tar_green") and string.find(object.name, "Brand_") then
 			for key,value in ipairs(particleWList) do
-				if value.obj.networkId == object.networkId then
+				if value.obj.handle == object.handle then
 					table.remove(particleWList, key)
 					disappearedE = game.time
 					self:DebugPrint("Removed particle W")
@@ -466,7 +466,7 @@ cb.add(cb.load, function()
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
 		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
-				buffs["Time" .. source.networkId] = game.time + 4
+				buffs["Time" .. source.handle] = game.time + 4
 				self:DebugPrint("Detected Guardian angel on " .. source.skinName)
 		end
 		if self.BrandMenu.debug_print_buffs:get() then	
@@ -474,7 +474,7 @@ cb.add(cb.load, function()
 		end
 		local buffFlag = false
 		for i, name in ipairs(buffToCheck) do
-			if not buff.caster or buff.caster.networkId == player.networkId then break end
+			if not buff.caster or buff.caster.handle == player.handle then break end
 			if buff.name == name then
 				buffFlag = true
 				break
@@ -482,7 +482,7 @@ cb.add(cb.load, function()
 		end
 		if not buffFlag then
 			for i, name in ipairs(selfBuffToCheck) do
-				if buff.caster and buff.caster.networkId ~= player.networkId then break end
+				if buff.caster and buff.caster.handle ~= player.handle then break end
 				if buff.name == name then
 					buffFlag = true
 					break
@@ -491,10 +491,10 @@ cb.add(cb.load, function()
 		end
 		if not buffFlag then table.remove(debugList, #debugList) return end
 		if gained then
-			buffs[source.networkId .. buff.name] = buff
+			buffs[source.handle .. buff.name] = buff
 			self:DebugPrint(source.skinName .. " -> Buff added (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		else
-			buffs[source.networkId .. buff.name] = nil
+			buffs[source.handle .. buff.name] = nil
 			self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		end
 		table.remove(debugList, #debugList)
@@ -543,7 +543,7 @@ cb.add(cb.load, function()
 		if unit.isHealthBarVisible and not unit.isDead then
 			if unit.skinName == "Yuumi" then
 				local YuumiBuff = unit:getBuff("YuumiWAttach")
-				if YuumiBuff and YuumiBuff.caster.networkId == unit.networkId then goto continue end
+				if YuumiBuff and YuumiBuff.caster.handle == unit.handle then goto continue end
 			end
 			table.insert(debugList, "DrawLoop1")
 			-- Draw R damage on every enemies HP bars
@@ -743,7 +743,7 @@ cb.add(cb.load, function()
 				if player and player.pos:distance2D(target.pos) <= 600 and player.pos:distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then rCanBounce = true end
 				if not rCanBounce then
 					for _, minion in pairs(objManager.aiBases.list) do
-						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.networkId ~= target.networkId and minion:isValidTarget(600, true, target.pos)
+						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos)
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local minionAI = minion.asAIBase
 						if not validTarget or (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(enemyPos) > 600 then goto continue2 end          
@@ -833,7 +833,7 @@ cb.add(cb.load, function()
 					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
 						if not validTarget then goto continue5 end
 						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
@@ -867,7 +867,7 @@ cb.add(cb.load, function()
 				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(600, true, player.pos)
 				if not validTarget then goto continue6 end
 				for index, target in pairs(ts.getTargets()) do
-					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
+					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
 					if not validTarget then goto continue7 end
 					minionAI = minion.asAIBase
 					if (minionAI.path and pred.positionAfterTime(minionAI, 0.6 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then
@@ -977,7 +977,7 @@ cb.add(cb.load, function()
 					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
 						if not validTarget then goto continue5 end
 						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
@@ -1092,7 +1092,7 @@ cb.add(cb.load, function()
 				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(660, true, player.pos)
 				if not validTarget then goto continue1 end
 				for index, target in pairs(ts.getTargets()) do
-					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.networkId ~= target.networkId
+					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
 					if not validTarget then goto continue2 end
 					local BrandABlaze = minion.asAIBase:findBuff("BrandAblaze")
 					local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
