@@ -533,10 +533,14 @@ cb.add(cb.load, function()
 		end
 		table.insert(debugList, "Glow")
 		if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
-			QTarget:addGlow(graphics.argb(255, 255, 127, 0), 3, 0)
+			if QTarget.isValid and QTarget.isVisible and not QTarget.isDead then
+				QTarget:addGlow(graphics.argb(255, 255, 127, 0), 3, 0)
+			end
 		end
 		if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
-			RTarget:addGlow(graphics.argb(255, 255, 0, 0), 3, 0)
+			if RTarget.isValid and RTarget.isVisible and not RTarget.isDead then
+				RTarget:addGlow(graphics.argb(255, 255, 0, 0), 3, 0)
+			end
 		end
 		table.remove(debugList, #debugList)
 	end
@@ -1204,12 +1208,16 @@ cb.add(cb.load, function()
             graphics.drawCircle(player.pos, self.rData.range, 2, graphics.argb(alpha, 255, 127, 0))
         end
         if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
-			graphics.drawCircle(QTarget.pos, 100, 2, graphics.argb(255, 255, 127, 0))
-			graphics.drawCircle(QTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 127, 0))
+			if QTarget.isValid and QTarget.isVisible and not QTarget.isDead then
+				graphics.drawCircle(QTarget.pos, 100, 2, graphics.argb(255, 255, 127, 0))
+				graphics.drawCircle(QTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 127, 0))
+			end
         end
         if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
-			graphics.drawCircle(RTarget.pos, 100, 2, graphics.argb(255, 255, 0, 0))
-			graphics.drawCircle(RTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 0, 0))
+			if RTarget.isValid and RTarget.isVisible and not RTarget.isDead then
+				graphics.drawCircle(RTarget.pos, 100, 2, graphics.argb(255, 255, 0, 0))
+				graphics.drawCircle(RTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 0, 0))
+			end
         end
         if self.XerathMenu.drawings.draw_r_range_minimap:get() then
             if player:spellSlot(SpellSlot.R).state == 0 or rBuff then
