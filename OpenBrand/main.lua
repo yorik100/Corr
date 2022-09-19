@@ -12,7 +12,8 @@
 --         print(value.name .. " Counter: " .. value.counter .. " Stacks: " .. value.stacks)
 --     end
 -- end
-
+local JSON = require("jsonLib")
+local Update = require("updateLib")
 -- This callback is called when the script is loaded.
 cb.add(cb.load, function()
 
@@ -20,6 +21,24 @@ cb.add(cb.load, function()
     -- Check if the current champion is Annie. If not, don't load the script
     if player.skinName ~= "Brand" then return end
 	print("[OpenBrand] Open Brand loaded")
+	
+	local currentVersion = 1.05
+	print("[OpenBrand] Checking for updates")
+    _G.net.getAsync("https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/data.json", function(response)
+        if not response then
+            return
+        end
+
+        if response.status ~= 200 then
+            return
+        end
+        local json = JSON.decode(response.text)
+
+        if json["Version"] > currentVersion then
+            Update:__init(tostring(json["Version"]), "OpenBrand", "https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/version.json")
+        end
+		print("[OpenBrand] Checked for updates")
+    end)
 
     -- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb

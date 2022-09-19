@@ -12,7 +12,8 @@
 --         print(value.name .. " Counter: " .. value.counter .. " Stacks: " .. value.stacks)
 --     end
 -- end
-
+local JSON = require("jsonLib")
+local Update = require("updateLib")
 -- This callback is called when the script is loaded.
 cb.add(cb.load, function()
 
@@ -20,7 +21,28 @@ cb.add(cb.load, function()
     -- Check if the current champion is Annie. If not, don't load the script
     if player.skinName ~= "Xerath" then return end
 	print("[OpenXerath] Open Xerath loaded")
+	
+    -- local file = loadfile(fs.scriptPath .. "OpenXerath\\data.json")
+	-- local json = JSON.decode(file)
+	-- print(tostring(json["Version"]))
+	-- print(file)
+	local currentVersion = 1.05
+	print("[OpenXerath] Checking for updates")
+    _G.net.getAsync("https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/data.json", function(response)
+        if not response then
+            return
+        end
 
+        if response.status ~= 200 then
+            return
+        end
+        local json = JSON.decode(response.text)
+
+        if json["Version"] > currentVersion then
+            Update:__init(tostring(json["Version"]), "OpenXerath", "https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/version.json")
+        end
+		print("[OpenXerath] Checked for updates")
+    end)
     -- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
@@ -1128,6 +1150,7 @@ cb.add(cb.load, function()
 				player:updateChargeableSpell(SpellSlot.Q, p.castPosition)
 				hasCasted = true
 				self:DebugPrint("Casted Q with range of " .. math.ceil(self.qData.range) .. " on " .. mode)
+				self.qData.range = 750
 			end
 		end
 		return p and p.hitChance or 0
