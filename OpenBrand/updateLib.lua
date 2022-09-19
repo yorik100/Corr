@@ -4,7 +4,7 @@ local Update = {}
 
 function Update:__init(updateVersion, scriptName, scriptVersion)
 	print("Updating")
-    self.currentVersion = version
+    self.currentVersion = scriptVersion
     self.scriptName = scriptName
     self.scriptVersion = scriptVersion
     self.scriptUpdate = ""
@@ -38,10 +38,10 @@ end
 function Update:downloadUpdate()
     _G.net.autoUpdate(self.scriptUpdate, self.scriptName, function(success)
         if not success then
-            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">The update failed! (v" .. updateVersion .. ")</font>")
+            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">The update failed! (v" .. self.currentVersion .. ")</font>")
         end
     
-        chat.showChat("<font color=\"#1E90FF\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. updateVersion .. ")</font>")
+        chat.showChat("<font color=\"#1E90FF\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. self.currentVersion .. ")</font>")
     end)
 end
 
