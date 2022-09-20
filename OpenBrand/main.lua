@@ -13,7 +13,6 @@
 --     end
 -- end
 local JSON = require("jsonLib")
-local Update = require("updateLib")
 -- This callback is called when the script is loaded.
 cb.add(cb.load, function()
 
