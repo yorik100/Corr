@@ -13,7 +13,6 @@
 --     end
 -- end
 local JSON = require("jsonLib")
-local Update = require("updateLib")
 -- This callback is called when the script is loaded.
 cb.add(cb.load, function()
 
@@ -22,27 +21,30 @@ cb.add(cb.load, function()
     if player.skinName ~= "Xerath" then return end
 	print("[OpenXerath] Open Xerath loaded")
 	
-    -- local file = loadfile(fs.scriptPath .. "OpenXerath\\data.json")
-	-- local json = JSON.decode(file)
-	-- print(tostring(json["Version"]))
-	-- print(file)
-	local currentVersion = 1.05
-	print("[OpenXerath] Checking for updates")
-    _G.net.getAsync("https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/data.json", function(response)
+	local data = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/data.json"
+	local main = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/main.lua"
+	local version = nil
+	local scriptName = "OpenXerath"
+    _G.net.getAsync(data, function(response)
         if not response then
-            return
+            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: no response</font>")
         end
 
         if response.status ~= 200 then
-            return
+            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: " .. response.status .. "</font>")
         end
         local json = JSON.decode(response.text)
 
-        if json["Version"] > currentVersion then
-            Update:__init(tostring(json["Version"]), "OpenXerath", "https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/version.json")
-        end
-		print("[OpenXerath] Checked for updates")
+        version = json["Version"]
+		_G.net.autoUpdateDirect(data, main, function(success)
+			if success then
+				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. version .. ")</font>")
+			else
+				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. ")</font>")
+			end
+		end)
     end)
+
     -- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }

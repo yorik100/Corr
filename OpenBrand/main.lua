@@ -22,22 +22,28 @@ cb.add(cb.load, function()
     if player.skinName ~= "Brand" then return end
 	print("[OpenBrand] Open Brand loaded")
 	
-	local currentVersion = 1.05
-	print("[OpenBrand] Checking for updates")
-    _G.net.getAsync("https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/data.json", function(response)
+	local data = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/data.json"
+	local main = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/main.lua"
+	local version = nil
+	local scriptName = "OpenBrand"
+    _G.net.getAsync(data, function(response)
         if not response then
-            return
+            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: no response</font>")
         end
 
         if response.status ~= 200 then
-            return
+            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: " .. response.status .. "</font>")
         end
         local json = JSON.decode(response.text)
 
-        if json["Version"] > currentVersion then
-            Update:__init(tostring(json["Version"]), "OpenBrand", "https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/version.json")
-        end
-		print("[OpenBrand] Checked for updates")
+        version = json["Version"]
+		_G.net.autoUpdateDirect(data, main, function(success)
+			if success then
+				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. version .. ")</font>")
+			else
+				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. ")</font>")
+			end
+		end)
     end)
 
     -- Create a 'class/table' where all the functions will be stored
