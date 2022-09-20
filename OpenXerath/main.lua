@@ -44,6 +44,27 @@ cb.add(cb.load, function()
 			end
 		end)
     end)
+	fileList = fs.getFiles(fs.scriptPath .. scriptName)
+	local tempText = ""
+	local shouldPrint = false
+	for key, value in ipairs(fileList) do
+		local realPath = string.gsub((fs.scriptPath .. scriptName .. "\\"), "\\", "/")
+		local fileName = tostring(string.gsub(value, realPath, ""))
+		local fileList = {"data.json", "main.lua", "jsonLib.lua"}
+		local tempFlag = false
+		for key, value in ipairs(fileList) do
+			if fileName == value then
+				tempFlag = true
+			end
+		end
+		if not tempFlag then
+			tempText = tempText .. " " .. fileName
+			shouldPrint = true
+		end
+	end
+	if shouldPrint then
+		chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Unused file(s) found in " .. scriptName .. " folder :" .. tempText)
+	end
 
     -- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb

@@ -1,7 +1,7 @@
 {
   "Name": "OpenXerath",
   "File": "main.lua",
-  "Version": 1.06,
+  "Version": 1.07,
   "Type": "Champ",
   "Champions": ["Xerath"]
 }
