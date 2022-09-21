@@ -40,7 +40,7 @@ cb.add(cb.load, function()
 			if success then
 				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. version .. ")</font>")
 			else
-				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. ")</font>")
+				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. " or higher)</font>")
 			end
 		end)
     end)
@@ -78,6 +78,7 @@ cb.add(cb.load, function()
 	local drawRDamage = {}
 	local RKillable = {}
 	local drawRValue = {}
+	local drawETargets = {}
 	local ElderBuff = nil
 	local hasCasted = false
 
@@ -584,6 +585,7 @@ cb.add(cb.load, function()
 	drawRDamage = {}
 	RKillable = {}
 	drawRValue = {}
+	drawETargets = {}
 	for _, unit in pairs(ts.getTargets()) do
 		if unit.isHealthBarVisible and not unit.isDead then
 			if unit.skinName == "Yuumi" then
@@ -649,6 +651,28 @@ cb.add(cb.load, function()
 					end
 				end
 			end
+		table.insert(debugList, "DrawELoop")
+			if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
+				for _, minion in pairs(objManager.aiBases.list) do
+					table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(660, true, player.pos)
+					if not validTarget then goto continue1 end
+					for index, target in pairs(ts.getTargets()) do
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
+						if not validTarget then goto continue2 end
+						local BrandABlaze = minion.asAIBase:findBuff("BrandAblaze")
+						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
+						local minionAI = minion.asAIBase
+						if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
+							table.insert(drawETargets, {unit = minion, totalERange = totalRange})
+						end
+						::continue2::
+					end
+					::continue1::
+					table.remove(debugList, #debugList)
+				end
+			end
+			table.remove(debugList, #debugList)
 			table.remove(debugList, #debugList)
 			::continue::
 		end
@@ -681,7 +705,7 @@ cb.add(cb.load, function()
 			local CCTime = pred.getCrowdControlledTime(enemy)
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
 			table.remove(debugList, #debugList)
-			if (CCTime <= 0 or not (CCQ or CCW)) and (not channelingSpell or not (ChannelQ or ChannelW)) and (not dashing or not (DashQ or DashW)) and (stasisTime <= 0 or not (StasisQ or StasisW)) and not manualE and not needsUltCasted then goto continue end
+			if (CCTime <= 0 or not (CCQ or CCW)) and (not channelingSpell or not (ChannelQ or ChannelW)) and (not dashing or not (DashQ or DashW)) and (stasisTime <= 0 or not (StasisQ or StasisW)) then goto continue end
 			
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
@@ -1130,28 +1154,6 @@ cb.add(cb.load, function()
             local alpha = player:spellSlot(SpellSlot.E).state == 0 and 255 or 50
             graphics.drawCircle(player.pos, 660, 2, graphics.argb(alpha, 0, 127, 255))
         end
-		table.insert(debugList, "DrawELoop")
-		if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
-			for _, minion in pairs(objManager.aiBases.list) do
-				table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
-				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(660, true, player.pos)
-				if not validTarget then goto continue1 end
-				for index, target in pairs(ts.getTargets()) do
-					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
-					if not validTarget then goto continue2 end
-					local BrandABlaze = minion.asAIBase:findBuff("BrandAblaze")
-					local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
-					local minionAI = minion.asAIBase
-					if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
-						graphics.drawCircle(minion.pos, totalRange, 2, graphics.argb(160, 0, 127, 255))
-					end
-					::continue2::
-				end
-				::continue1::
-				table.remove(debugList, #debugList)
-			end
-		end
-		table.remove(debugList, #debugList)
         if self.BrandMenu.drawings.draw_r_range:get() then
             local alpha = player:spellSlot(SpellSlot.R).state == 0 and 255 or 50
             graphics.drawCircle(player.pos, 750, 2, graphics.argb(alpha, 255, 127, 0))
@@ -1174,6 +1176,11 @@ cb.add(cb.load, function()
 			pos = vec2(value.unit.healthBarPosition.x + 70, value.unit.healthBarPosition.y - 30)
 			graphics.drawText2D(value.text, 24, pos, graphics.argb(255, value.red, 255-value.red, 255-value.red))
 			::skipDrawValue::
+		end
+		for key,value in ipairs(drawETargets) do
+			if not value.unit.isValid or not value.unit.isHealthBarVisible or value.unit.isDead then goto skipEDraw end
+			graphics.drawCircle(value.unit.pos, value.totalERange, 2, graphics.argb(160, 0, 127, 255))
+			::skipEDraw::
 		end
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "Draw2")

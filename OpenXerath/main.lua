@@ -40,7 +40,7 @@ cb.add(cb.load, function()
 			if success then
 				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. version .. ")</font>")
 			else
-				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. ")</font>")
+				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. " or higher)</font>")
 			end
 		end)
     end)
@@ -285,7 +285,7 @@ cb.add(cb.load, function()
 		mm.misc:keybind('manual_r', 'Manual R', 0x54, false, false)
 		mm.misc:boolean('manual_r_dont_r1', 'Manual R only if ulting', true)
 		mm.misc:slider('near_mouse_r', 'R2 near mouse range', 750, 0, 1500, 10)
-		mm.misc:keybind('manual_e', 'Manual E', 0x6a, false, false)
+		mm.misc:keybind('manual_e', 'Manual E', 0x4A, false, false)
 		mm.misc:boolean('w_before_e', 'Use W before firing manual E', false)
 		mm:header('prediction', 'Hitchance')
 		mm.prediction:list('q_hitchance', 'Q Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 2)
