@@ -79,6 +79,7 @@ cb.add(cb.load, function()
 	local RKillable = {}
 	local drawRValue = {}
 	local drawETargets = {}
+	local casting = {}
 	local ElderBuff = nil
 	local hasCasted = false
 
@@ -183,6 +184,7 @@ cb.add(cb.load, function()
 		cb.add(cb.create,function(...) self:OnCreate(...) end)
 		cb.add(cb.delete,function(...) self:OnDelete(...) end)
         cb.add(cb.processSpell,function(...) self:OnCastSpell(...) end)
+		cb.add(cb.basicAttack,function(...) self:OnBasicAttack(...) end)
     end
 
     -- This function will create the menu and return it to the Annie:__init function and store it in self.AnnieMenu
@@ -234,6 +236,8 @@ cb.add(cb.load, function()
 		mm.misc:boolean('w_stun', 'Auto W on stuns', true)
 		mm.misc:boolean('q_stasis', 'Auto Q on stasis', true)
 		mm.misc:boolean('w_stasis', 'Auto W on stasis', true)
+		mm.misc:boolean('q_casting', 'Auto Q on spellcast/attack', true)
+		mm.misc:boolean('w_casting', 'Auto W on spellcast/attack', true)
 		mm:header('prediction', 'Hitchance')
 		mm.prediction:list('q_hitchance', 'Q Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 2)
 		mm.prediction:list('w_hitchance', 'W Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 3)
@@ -693,6 +697,8 @@ cb.add(cb.load, function()
 		local DashW = self.BrandMenu.misc.w_dash:get() and player:spellSlot(SpellSlot.W).state == 0
 		local StasisQ = self.BrandMenu.misc.q_stasis:get() and player:spellSlot(SpellSlot.Q).state == 0
 		local StasisW = self.BrandMenu.misc.w_stasis:get() and player:spellSlot(SpellSlot.W).state == 0
+		local CastingQ = self.BrandMenu.misc.q_casting:get() and player:spellSlot(SpellSlot.Q).state == 0
+		local CastingW = self.BrandMenu.misc.w_casting:get() and player:spellSlot(SpellSlot.W).state == 0
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
@@ -704,8 +710,10 @@ cb.add(cb.load, function()
 			local dashing = enemy.path and enemy.path.isDashing
 			local CCTime = pred.getCrowdControlledTime(enemy)
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
+			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
+
 			table.remove(debugList, #debugList)
-			if (CCTime <= 0 or not (CCQ or CCW)) and (not channelingSpell or not (ChannelQ or ChannelW)) and (not dashing or not (DashQ or DashW)) and (stasisTime <= 0 or not (StasisQ or StasisW)) then goto continue end
+			if (CCTime <= 0 or not (CCQ or CCW)) and (not channelingSpell or not (ChannelQ or ChannelW)) and (not dashing or not (DashQ or DashW)) and (stasisTime <= 0 or not (StasisQ or StasisW)) and (CastTime <= 0 or not (CastingQ or CastingW)) then goto continue end
 			
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
@@ -748,8 +756,17 @@ cb.add(cb.load, function()
 				end
 			end
 			table.remove(debugList, #debugList)
+			table.insert(debugList, "AutoQCasting")
+			if CastingQ and CastTime > 0 and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
+				if Ablaze or WHit then
+					self:CastQ(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(660, true, player.pos) then
+					self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+				end
+			end
+			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQStasis")
-			if StasisQ and stasisTime > 0 and (stasisTime - pingLatency - 0.05) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
+			if StasisQ and stasisTime > 0 and (stasisTime - pingLatency + 0.05) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				self:CastQ(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
@@ -766,6 +783,11 @@ cb.add(cb.load, function()
 			table.insert(debugList, "AutoWCC")
 			if CCW and CCTime > 0 and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
 				self:CastW(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+			end
+			table.remove(debugList, #debugList)
+			table.insert(debugList, "AutoWCasting")
+			if CastingW and CastTime > 0 and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
+				self:CastW(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWStasis")
@@ -1080,7 +1102,7 @@ cb.add(cb.load, function()
 			p = pred.getPrediction(target, self.qData)
 			local WTime = self:WillGetHitByW(target)
 			local AblazeBuff = target.asAIBase:findBuff("BrandAblaze")
-			local hitChanceMode = (mode == "dash" or mode == "stun") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.q_hitchance:get()] or 1)
+			local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.q_hitchance:get()] or 1)
 			if p and p.castPosition.isValid and p.hitChance >= hitChanceMode and ((WTime and WTime < p.timeToTarget-0.2+pingLatency) or (AblazeBuff and AblazeBuff.remainingTime >= p.timeToTarget+pingLatency) or ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				player:castSpell(SpellSlot.Q, p.castPosition, true, false)
 				hasCasted = true
@@ -1096,7 +1118,7 @@ cb.add(cb.load, function()
     function Brand:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
 		if hasCasted then return 0 end
 		local p = pred.getPrediction(target, self.wData)
-		local hitChanceMode = (mode == "dash" or mode == "stun") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.w_hitchance:get()] or 1)
+		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.w_hitchance:get()] or 1)
 		if godBuffTime <= 0.7 + pingLatency and (noKillBuffTime <= 0.7 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode then
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
 			hasCasted = true
@@ -1213,6 +1235,39 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
         end
+		if not source or not source.isHero then return end
+		table.insert(debugList, "SpellCast")
+		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
+		local totalTime = castTime + channelTime
+		local endTime = game.time + totalTime
+
+		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
+			casting[source.handle] = game.time + castTime + channelTime
+		end
+		table.remove(debugList, #debugList)
+    end
+	
+    function Brand:OnBasicAttack(source, spell)
+		if debugList[1] then
+			local debugText = ""
+			for key,value in ipairs(debugList) do 
+				debugText = debugText .. " " .. value
+			end
+			print("[OpenDebug] Error found in" .. debugText)
+			debugList = {}
+		end
+		if not source or not source.isHero then return end
+		table.insert(debugList, "SpellCast")
+		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
+		local totalTime = castTime + channelTime
+		local endTime = game.time + totalTime
+
+		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
+			casting[source.handle] = game.time + castTime + channelTime
+		end
+		table.remove(debugList, #debugList)
     end
 
     -- This function will be executed inside OnTick and will prevent spamming the same spell as it gets casted.

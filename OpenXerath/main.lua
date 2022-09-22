@@ -106,6 +106,7 @@ cb.add(cb.load, function()
 	local RKillable = {}
 	local drawRValue = {}
 	local killList = {}
+	local casting = {}
 	local rBuff = nil
 	local qBuff = nil
 	local ElderBuff = nil
@@ -227,6 +228,7 @@ cb.add(cb.load, function()
 		cb.add(cb.create,function(...) self:OnCreate(...) end)
 		cb.add(cb.delete,function(...) self:OnDelete(...) end)
         cb.add(cb.processSpell,function(...) self:OnCastSpell(...) end)
+		cb.add(cb.basicAttack,function(...) self:OnBasicAttack(...) end)
     end
 
     -- This function will create the menu and return it to the Annie:__init function and store it in self.AnnieMenu
@@ -280,6 +282,8 @@ cb.add(cb.load, function()
 		mm.misc:boolean('w_stun', 'Auto W on stuns', true)
 		mm.misc:boolean('e_stasis', 'Auto E on stasis', true)
 		mm.misc:boolean('w_stasis', 'Auto W on stasis', true)
+		mm.misc:boolean('e_casting', 'Auto E on spellcast/attack', true)
+		mm.misc:boolean('w_casting', 'Auto W on spellcast/attack', true)
 		mm.misc:boolean('w_center_logic', 'Try to W center', true)
 		mm.misc:boolean('auto_r', 'Auto R2', false)
 		mm.misc:keybind('manual_r', 'Manual R', 0x54, false, false)
@@ -703,8 +707,7 @@ cb.add(cb.load, function()
 			debugList = {}
 		end
 		table.insert(debugList, "Tick")
-		-- local targetTest = ts.getInRange(2000)
-		-- if targetTest and targetTest.activeSpell and targetTest.activeSpell.castEndTime > game.time then print(targetTest.activeSpell.castEndTime - game.time) end
+		local targetTest = player
 		hasCasted = false
 		self:DrawCalcs()
 		QTarget = nil
@@ -894,6 +897,8 @@ cb.add(cb.load, function()
 		local DashW = self.XerathMenu.misc.w_dash:get() and player:spellSlot(SpellSlot.W).state == 0
 		local StasisE = self.XerathMenu.misc.e_stasis:get() and player:spellSlot(SpellSlot.E).state == 0
 		local StasisW = self.XerathMenu.misc.w_stasis:get() and player:spellSlot(SpellSlot.W).state == 0
+		local CastingE = self.XerathMenu.misc.e_casting:get() and player:spellSlot(SpellSlot.E).state == 0
+		local CastingW = self.XerathMenu.misc.w_casting:get() and player:spellSlot(SpellSlot.W).state == 0
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
@@ -907,10 +912,11 @@ cb.add(cb.load, function()
 			local CCTime = pred.getCrowdControlledTime(enemy)
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(self.eData.range, true, player.pos)
-			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
+			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
+			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
-			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW)) and (stasisTime <= 0 or not (StasisE or StasisW)) and not manualE and not needsUltCasted then goto continue end
+			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW)) and (stasisTime <= 0 or not (StasisE or StasisW)) and (CastTime <= 0 or not (CastingE or CastingW)) and not manualE and not needsUltCasted then goto continue end
 			
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
@@ -940,8 +946,13 @@ cb.add(cb.load, function()
 				self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
+			table.insert(debugList, "AutoECasting")
+			if CastingE and CastTime > 0 and (CastTime - pingLatency - 0.3) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+				self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
+			end
+			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoEStasis")
-			if StasisE and stasisTime > 0 and (stasisTime - pingLatency - 0.05) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+			if StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.05) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
 				self:CastE(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
@@ -958,6 +969,11 @@ cb.add(cb.load, function()
 			table.insert(debugList, "AutoWCC")
 			if CCW and CCTime > 0 and (CCTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.7 + pingLatency and (noKillBuffTimeAuto <= 0.7 + pingLatency or WDamage < totalHP) then
 				self:CastW(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+			end
+			table.remove(debugList, #debugList)
+			table.insert(debugList, "AutoWCasting")
+			if CastingW and CastTime > 0 and (CastTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.7 + pingLatency and (noKillBuffTimeAuto <= 0.7 + pingLatency or WDamage < totalHP) then
+				self:CastW(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWStasis")
@@ -1164,7 +1180,8 @@ cb.add(cb.load, function()
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
 			self.qData.delay = 0.5
 			self.qData.range = self:GetChargeRange(1500, 750, 1.5)
-			if self.qData.range < 1500 and stunTime <= 0 and not dashing and not channelingSpell then
+			local CastTime = target.activeSpell and casting[target.handle] and game.time < casting[target.handle] and (casting[target.handle] - game.time) or 0
+			if self.qData.range < 1500 and stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell then
 				self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
 			end
 			local canBeSlowed = canBeStunned and not target:getBuff("Highlander")
@@ -1185,7 +1202,7 @@ cb.add(cb.load, function()
 		local w1 = pred.getPrediction(target, self.wData)
 		local w2 = pred.getPrediction(target, self.w2Data)
 		local p = self.XerathMenu.misc.w_center_logic:get() and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
-		local hitChanceMode = (mode == "dash" or mode == "stun") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
+		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode then
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
 			self:DebugPrint("Casted W on " .. mode)
@@ -1197,7 +1214,7 @@ cb.add(cb.load, function()
     function Xerath:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime)
 		if hasCasted then return 0 end
 		local p = pred.getPrediction(target, self.eData)
-		local hitChanceMode = (mode == "dash" or mode == "stun") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
+		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		-- Cast E with pred
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
 			player:castSpell(SpellSlot.E, p.castPosition, true, false)
@@ -1347,6 +1364,39 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
         end
+		if not source or not source.isHero then return end
+		table.insert(debugList, "SpellCast")
+		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
+		local totalTime = castTime + channelTime
+		local endTime = game.time + totalTime
+
+		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
+			casting[source.handle] = game.time + castTime + channelTime
+		end
+		table.remove(debugList, #debugList)
+    end
+	
+    function Xerath:OnBasicAttack(source, spell)
+		if debugList[1] then
+			local debugText = ""
+			for key,value in ipairs(debugList) do 
+				debugText = debugText .. " " .. value
+			end
+			print("[OpenDebug] Error found in" .. debugText)
+			debugList = {}
+		end
+		if not source or not source.isHero then return end
+		table.insert(debugList, "SpellCast")
+		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
+		local totalTime = castTime + channelTime
+		local endTime = game.time + totalTime
+
+		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
+			casting[source.handle] = game.time + castTime + channelTime
+		end
+		table.remove(debugList, #debugList)
     end
 
     -- This function will be executed inside OnTick and will prevent spamming the same spell as it gets casted.
