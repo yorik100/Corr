@@ -952,7 +952,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoEStasis")
-			if StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.05) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+			if StasisE and stasisTime > 0 and (stasisTime - pingLatency) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
 				self:CastE(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
@@ -1077,7 +1077,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "ComboQ2")
-			if CanUseQ and orb.predictHP(target, 1.5 + pingLatency) > 0 and godBuffTimeCombo <= 1.5 + pingLatency and (noKillBuffTimeCombo <= 1.5 + pingLatency or not ((((totalHP) - QDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
+			if CanUseQ and (target.path and pred.positionAfterTime(target, 0.5 + pingLatency):distance2D(player.pos) <= 1500 or target.pos:distance2D(player.pos) <= 1500) and orb.predictHP(target, 1.5 + pingLatency) > 0 and godBuffTimeCombo <= 1.5 + pingLatency and (noKillBuffTimeCombo <= 1.5 + pingLatency or not ((((totalHP) - QDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				self:CastQ2(target,"combo", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, QDamage, totalHP, chargingQ, CCTime, canBeStunned)
 				QTarget = chargingQ and target or nil
 				table.remove(debugList, #debugList)
@@ -1134,7 +1134,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "HarassQ2")
-			if CanUseQ and orb.predictHP(target, 1.5 + pingLatency) > 0 and godBuffTimeCombo <= 1.5 + pingLatency and (noKillBuffTimeCombo <= 1.5 + pingLatency or not ((((totalHP) - QDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
+			if CanUseQ and (target.path and pred.positionAfterTime(target, 0.5 + pingLatency):distance2D(player.pos) <= 1500 or target.pos:distance2D(player.pos) <= 1500) and orb.predictHP(target, 1.5 + pingLatency) > 0 and godBuffTimeCombo <= 1.5 + pingLatency and (noKillBuffTimeCombo <= 1.5 + pingLatency or not ((((totalHP) - QDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				self:CastQ2(target,"harass", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, QDamage, totalHP, chargingQ, CCTime, canBeStunned)
 				QTarget = chargingQ and target or nil
 				table.remove(debugList, #debugList)
@@ -1181,8 +1181,11 @@ cb.add(cb.load, function()
 			self.qData.delay = 0.5
 			self.qData.range = self:GetChargeRange(1500, 750, 1.5)
 			local CastTime = target.activeSpell and casting[target.handle] and game.time < casting[target.handle] and (casting[target.handle] - game.time) or 0
-			if self.qData.range < 1500 and stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell then
-				self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
+			if self.qData.range < 1500 then
+				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 then
+					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
+				end
+				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency)
 			end
 			local canBeSlowed = canBeStunned and not target:getBuff("Highlander")
 			p = pred.getPrediction(target, self.qData)

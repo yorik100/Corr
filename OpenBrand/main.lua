@@ -766,7 +766,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQStasis")
-			if StasisQ and stasisTime > 0 and (stasisTime - pingLatency + 0.05) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
+			if StasisQ and stasisTime > 0 and (stasisTime - pingLatency) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				self:CastQ(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
