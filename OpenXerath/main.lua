@@ -1061,8 +1061,12 @@ cb.add(cb.load, function()
 			table.insert(debugList, "ComboE")
 			if CanUseE and orb.predictHP(target, 0.2 + pingLatency) > 0 and godBuffTimeCombo <= 0.5 + pingLatency and (noKillBuffTimeCombo <= 0.5 + game.latency/1000 or not ((((totalHP) - EDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and canBeStunned then
 				-- Chain CC logic inspired by Hellsing Xerath https://github.com/Hellsing/EloBuddy-Addons/blob/master/Xerath/Modes/Combo.cs#L32
-				if CCTime == 0 or (CCTime - pingLatency - 0.3) < ELandingTime then
+				if CCTime <= 0 or (CCTime - pingLatency - 0.3) < ELandingTime then
 					if self:CastE(target,"combo", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, EDamage, totalHP, CCTime) > 0 then shouldNotSwapTarget = true end
+				else
+					if CCTime < 1 then
+						break
+					end
 				end
 			end
 			table.remove(debugList, #debugList)
@@ -1204,7 +1208,7 @@ cb.add(cb.load, function()
 		if hasCasted then return 0 end
 		local w1 = pred.getPrediction(target, self.wData)
 		local w2 = pred.getPrediction(target, self.w2Data)
-		local p = self.XerathMenu.misc.w_center_logic:get() and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
+		local p = (self.XerathMenu.misc.w_center_logic:get() or (w2 and w2.hitChance >= 6)) and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode then
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
