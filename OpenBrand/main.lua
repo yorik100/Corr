@@ -791,7 +791,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWStasis")
-			if StasisW and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.05) < 0.875 and godBuffTimeAuto <= 0.7 + pingLatency and (noKillBuffTimeAuto <= 0.7 + pingLatency or WDamage < totalHP) then
+			if StasisW and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.15) < 0.875 and godBuffTimeAuto <= 0.7 + pingLatency and (noKillBuffTimeAuto <= 0.7 + pingLatency or WDamage < totalHP) then
 				self:CastW(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)

@@ -913,7 +913,7 @@ cb.add(cb.load, function()
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(self.eData.range, true, player.pos)
 			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
-			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.05) < 0.6
+			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.15) < 0.6
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
 			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW)) and (stasisTime <= 0 or not (StasisE or StasisW)) and (CastTime <= 0 or not (CastingE or CastingW)) and not manualE and not needsUltCasted then goto continue end
@@ -977,7 +977,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWStasis")
-			if StasisW and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.05) < 0.75 and godBuffTimeAuto <= 0.7 + pingLatency and (noKillBuffTimeAuto <= 0.7 + pingLatency or WDamage < totalHP) then
+			if StasisW and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.15) < 0.75 and godBuffTimeAuto <= 0.7 + pingLatency and (noKillBuffTimeAuto <= 0.7 + pingLatency or WDamage < totalHP) then
 				self:CastW(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
