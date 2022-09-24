@@ -163,6 +163,7 @@ cb.add(cb.load, function()
 			radius = 70,
             type = spellType.linear,
             rangeType = 1,
+			from = player.pos,
             boundingRadiusMod = true
         }
 		self.wData = {
@@ -1174,7 +1175,8 @@ cb.add(cb.load, function()
 		if hasCasted then return 0 end
 		local buff = chargingQ
 		buff = buff and buff.valid or nil
-		self.qChargeData.speed = 1000 + player.characterIntermediate.moveSpeed*1.125
+		self.qChargeData.from = player.pos:extend(target.pos, 750)
+		self.qChargeData.speed = 500 + player.characterIntermediate.moveSpeed*1.125
 		local p = pred.getPrediction(target, self.qChargeData)
 		if not buff and p and p.hitChance >= 1 then
 			player:castSpell(SpellSlot.Q, game.cursorPos, true, false)
