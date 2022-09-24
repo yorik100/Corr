@@ -743,6 +743,24 @@ cb.add(cb.load, function()
 	
 	function Xerath:DrawCalcs()
 	table.insert(debugList, "DrawCalcs")
+	table.insert(debugList, "ParticleDelete")
+	for key,value in ipairs(particleRList) do
+		if game.time > value.time + 0.8 then
+			disappearedRObject = {
+					obj = value.obj,
+					time = game.time
+			}
+			table.remove(particleRList, key)
+			self:DebugPrint("Removed particle R")
+		end
+	end
+	for key,value in ipairs(particleWList) do
+		if game.time > value.time + 0.783 then
+			table.remove(particleWList, key)
+			self:DebugPrint("Removed particle W")
+		end
+	end
+	table.remove(debugList, #debugList)
 	table.insert(debugList, "DrawCalcs1")
 	changedList = (oldXValue and oldYValue) and (oldXValue ~= self.XerathMenu.drawings.draw_r_list_x:get() or oldYValue ~= self.XerathMenu.drawings.draw_r_list_y:get()) or false
 	oldXValue = self.XerathMenu.drawings.draw_r_list_x:get()
@@ -866,24 +884,6 @@ cb.add(cb.load, function()
     function Xerath:Auto()
 		table.insert(debugList, "Auto")
 		table.insert(debugList, "Auto1")
-		for key,value in ipairs(particleRList) do
-			if game.time > value.time + 0.8 then
-				disappearedRObject = {
-						obj = value.obj,
-						time = game.time
-				}
-				table.remove(particleRList, key)
-				self:DebugPrint("Removed particle R")
-			end
-		end
-		for key,value in ipairs(particleWList) do
-			if game.time > value.time + 0.783 then
-				table.remove(particleWList, key)
-				self:DebugPrint("Removed particle W")
-			end
-		end
-		table.remove(debugList, #debugList)
-		table.insert(debugList, "Auto2")
 		isUlting = rBuff
 		if self.XerathMenu.misc.manual_r:get() and not self.XerathMenu.misc.manual_r_dont_r1:get() and not isUlting and player:spellSlot(SpellSlot.R).state == 0 then
 			player:castSpell(SpellSlot.R, true, false)
