@@ -175,7 +175,7 @@ cb.add(cb.load, function()
             boundingRadiusMod = true
         }
 		self.w2Data = {
-            delay = 0.9,
+            delay = 0.75,
             speed = math.huge,
             range = 1000,
 			radius = 125,
