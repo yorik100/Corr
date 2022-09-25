@@ -80,8 +80,10 @@ cb.add(cb.load, function()
 	local drawRValue = {}
 	local drawETargets = {}
 	local casting = {}
+	local particleCastList = {}
 	local ElderBuff = nil
 	local hasCasted = false
+	local isSylasRCast = nil
 
     -- Creating a debug print function, so the developer can easily check the output and if someone
     -- wants to play with the simple script can disable the debug prints in the console
@@ -238,6 +240,8 @@ cb.add(cb.load, function()
 		mm.misc:boolean('w_stasis', 'Auto W on stasis', true)
 		mm.misc:boolean('q_casting', 'Auto Q on spellcast/attack', true)
 		mm.misc:boolean('w_casting', 'Auto W on spellcast/attack', true)
+		mm.misc:boolean('q_particle', 'Auto Q on particles', true)
+		mm.misc:boolean('w_particle', 'Auto W on particles', true)
 		mm:header('prediction', 'Hitchance')
 		mm.prediction:list('q_hitchance', 'Q Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 2)
 		mm.prediction:list('w_hitchance', 'W Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 3)
@@ -475,6 +479,29 @@ cb.add(cb.load, function()
 		if string.find(object.name, "_POF_tar_green") and string.find(object.name, "Brand_") then
 			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
+		elseif string.find(object.name, "_R_Gatemarker") then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "_R_ChargeIndicator") then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump") then
+			castPos = object.pos + object.asEffectEmitter.animationComponent.forward*1350
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.2, castingPos = castPos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "R_Tar_Ground") then
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.75, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "R_Landing") and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "W_ImpactWarning") then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.6, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)
 		-- print(object.name)
@@ -496,6 +523,14 @@ cb.add(cb.load, function()
 					table.remove(particleWList, key)
 					disappearedE = game.time
 					self:DebugPrint("Removed particle W")
+					break
+				end
+			end
+		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") then
+			for key,value in ipairs(particleCastList) do
+				if value.obj.handle == object.handle then
+					table.remove(particleCastList, key)
+					self:DebugPrint("Removed cast particle " .. value.obj.name)
 					break
 				end
 			end
@@ -699,6 +734,7 @@ cb.add(cb.load, function()
 		local StasisW = self.BrandMenu.misc.w_stasis:get() and player:spellSlot(SpellSlot.W).state == 0
 		local CastingQ = self.BrandMenu.misc.q_casting:get() and player:spellSlot(SpellSlot.Q).state == 0
 		local CastingW = self.BrandMenu.misc.w_casting:get() and player:spellSlot(SpellSlot.W).state == 0
+		local pingLatency = game.latency/1000
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
@@ -717,7 +753,6 @@ cb.add(cb.load, function()
 			
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
-			local pingLatency = game.latency/1000
 			local noKillBuffTimeAuto = self:noKillBuffTime(enemy)
 			local QDamage = self:GetDamageQ(enemy, 0)
 			local WDamage = self:GetDamageW2(enemy, 0)
@@ -797,6 +832,37 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			::continue::
         end
+		table.remove(debugList, #debugList)
+		table.insert(debugList, "AutoParticleLoop")
+		local QParticle = (self.BrandMenu.misc.q_particle:get() and player:spellSlot(SpellSlot.Q).state == 0)
+		local WParticle = (self.BrandMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
+		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
+			for key,value in ipairs(particleCastList) do
+				local particleOwner = value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object or value.obj.asEffectEmitter.targetAttachment.object
+				if not particleOwner then
+					particleOwner = {
+					isEnemy = true,
+					boundingRadius = 55
+					}
+				print("Homeless particle : " .. value.obj.name)
+				end
+				if player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
+				local particleTime = (value.time + value.castTime) - game.time
+				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
+				for key,value in ipairs(particleCastList) do
+					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime then
+						player:castSpell(SpellSlot.Q, value.castingPos, true, false)
+						hasCasted = true
+						self:DebugPrint("Casted Q on particle")
+					elseif WParticle and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.15) <= 0.875 then
+						player:castSpell(SpellSlot.W, value.castingPos, true, false)
+						hasCasted = true
+						self:DebugPrint("Casted W on particle")
+					end
+				end
+				::nextParticle::
+			end
+		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
     end
@@ -1236,6 +1302,11 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
         end
 		if not source or not source.isHero then return end
+		table.insert(debugList, "Exceptions")
+		if spell.name == "EvelynnR" and source.isAlly then
+			isSylasRCast = game.time
+		end
+		table.remove(debugList, #debugList)
 		table.insert(debugList, "SpellCast")
 		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
 		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay

@@ -1062,7 +1062,7 @@ cb.add(cb.load, function()
 					}
 				print("Homeless particle : " .. value.obj.name)
 				end
-				if player.pos:distance2D(value.castingPos) > 1125 or not particleOwner.isEnemy then goto nextParticle end
+				if player.pos:distance2D(value.castingPos) > self.eData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
 				for key,value in ipairs(particleCastList) do
@@ -1070,7 +1070,7 @@ cb.add(cb.load, function()
 						player:castSpell(SpellSlot.E, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted E on particle")
-					elseif WParticle and not EParticle and player.pos:distance2D(value.castingPos) <= 1000 and (particleTime - pingLatency + 0.15) <= 0.75 then
+					elseif WParticle and not EParticle and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.15) <= 0.75 then
 						player:castSpell(SpellSlot.W, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted W on particle")
