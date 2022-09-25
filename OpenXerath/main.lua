@@ -326,7 +326,6 @@ cb.add(cb.load, function()
 	
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Xerath:godBuffTime(target)
-		if target.isInvulnerable then return math.huge end
 		local buffTime = 0
 		local buffList = {"KayleR", "TaricR", "SivirE", "FioraW", "PantheonE", "NocturneShroudofDarkness", "kindredrnodeathbuff", "XinZhaoRRangedImmunity", "gwenwmissilecatcher"}
 		for i, name in ipairs(buffList) do
