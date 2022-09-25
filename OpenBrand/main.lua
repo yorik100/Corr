@@ -850,7 +850,7 @@ cb.add(cb.load, function()
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
 				for key,value in ipairs(particleCastList) do
-					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime then
+					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not (pred.findSpellCollisions(player, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency))[1] then
 						player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted Q on particle")
