@@ -659,7 +659,7 @@ cb.add(cb.load, function()
 			if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
 				for _, minion in pairs(objManager.aiBases.list) do
 					table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(660, true, player.pos)
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(660, true, player.pos)
 					if not validTarget then goto continue1 end
 					for index, target in pairs(ts.getTargets()) do
 						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
@@ -834,7 +834,7 @@ cb.add(cb.load, function()
 				if player and player.pos:distance2D(target.pos) <= 600 and player.pos:distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then rCanBounce = true end
 				if not rCanBounce then
 					for _, minion in pairs(objManager.aiBases.list) do
-						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos)
+						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos)
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local minionAI = minion.asAIBase
 						if not validTarget or (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(enemyPos) > 600 then goto continue2 end          
@@ -921,7 +921,7 @@ cb.add(cb.load, function()
 			local chosenMinion = nil
 			local distanceChamp = nil
 				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos)
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
 						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
@@ -955,7 +955,7 @@ cb.add(cb.load, function()
 			local rTotalDamage = nil
 			local distanceChamp = nil
 			for _, minion in pairs(objManager.aiBases.list) do
-				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion:isValidTarget(600, true, player.pos)
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(600, true, player.pos)
 				if not validTarget then goto continue6 end
 				for index, target in pairs(ts.getTargets()) do
 					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
@@ -1065,7 +1065,7 @@ cb.add(cb.load, function()
 			local chosenMinion = nil
 			local distanceChamp = nil
 				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and minion.pos and minion:isValidTarget(660, true, player.pos)
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos)
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
 						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
