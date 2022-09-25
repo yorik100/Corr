@@ -69,7 +69,7 @@ cb.add(cb.load, function()
     -- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
-	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon"}
+	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher"}
 	local selfBuffToCheck = {"XerathArcanopulseChargeUp", "xerathrshots", "xerathascended2onhit", "SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
     local Xerath = {}
 	local buffs = {}
@@ -107,10 +107,12 @@ cb.add(cb.load, function()
 	local drawRValue = {}
 	local killList = {}
 	local casting = {}
+	local particleCastList = {}
 	local rBuff = nil
 	local qBuff = nil
 	local ElderBuff = nil
 	local hasCasted = false
+	local isSylasRCast = nil
 
     -- Creating a debug print function, so the developer can easily check the output and if someone
     -- wants to play with the simple script can disable the debug prints in the console
@@ -285,6 +287,8 @@ cb.add(cb.load, function()
 		mm.misc:boolean('w_stasis', 'Auto W on stasis', true)
 		mm.misc:boolean('e_casting', 'Auto E on spellcast/attack', true)
 		mm.misc:boolean('w_casting', 'Auto W on spellcast/attack', true)
+		mm.misc:boolean('e_particle', 'Auto E on particles', true)
+		mm.misc:boolean('w_particle', 'Auto W on particles', true)
 		mm.misc:boolean('w_center_logic', 'Try to W center', true)
 		mm.misc:boolean('auto_r', 'Auto R2', false)
 		mm.misc:keybind('manual_r', 'Manual R', 0x54, false, false)
@@ -322,8 +326,9 @@ cb.add(cb.load, function()
 	
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Xerath:godBuffTime(target)
+		if target.isInvulnerable then return math.huge end
 		local buffTime = 0
-		local buffList = {"KayleR", "TaricR", "SivirE", "FioraW", "PantheonE", "NocturneShroudofDarkness", "kindredrnodeathbuff", "XinZhaoRRangedImmunity", "gwenwmissilecatcher", "fizzeicon"}
+		local buffList = {"KayleR", "TaricR", "SivirE", "FioraW", "PantheonE", "NocturneShroudofDarkness", "kindredrnodeathbuff", "XinZhaoRRangedImmunity", "gwenwmissilecatcher"}
 		for i, name in ipairs(buffList) do
 			local buff = target:getBuff(name)
 			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) then
@@ -600,14 +605,35 @@ cb.add(cb.load, function()
 		if string.find(object.name, "_R_aoe_reticle_green") and string.find(object.name, "Xerath_") then
 			table.insert(particleRList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle R")
-		end
-		if string.find(object.name, "_W_aoe_green") and string.find(object.name, "Xerath_") then
+		elseif string.find(object.name, "_W_aoe_green") and string.find(object.name, "Xerath_") then
 			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
-		end
-		if object.name == "XerathMageSpearMissile" then
+		elseif object.name == "XerathMageSpearMissile" and object.caster.handle == player.handle then
 			table.insert(particleEList, {obj = object, time = game.time})
 			self:DebugPrint("Added missile E")
+		elseif string.find(object.name, "_R_Gatemarker") then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "_R_ChargeIndicator") then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump") then
+			castPos = object.pos + object.asEffectEmitter.animationComponent.forward*1350
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.2, castingPos = castPos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "R_Tar_Ground") then
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.75, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "R_Landing") and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "W_ImpactWarning") then
+			castPos = object.pos
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.6, castingPos = object.pos})
+			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)
 		-- print(object.name)
@@ -632,8 +658,7 @@ cb.add(cb.load, function()
 					break
 				end
 			end
-		end
-		if object.name == "XerathLocusPulse" then
+		elseif object.name == "XerathLocusPulse" then
 			for key,value in ipairs(particleRList) do
 				if game.time > value.time + 0.55 then
 					disappearedRObject = {
@@ -646,6 +671,14 @@ cb.add(cb.load, function()
 			end
 			if rshots then
 				rshots = (rshots - 1 >= 1 and rshots - 1 or nil)
+			end
+		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") then
+			for key,value in ipairs(particleCastList) do
+				if value.obj.handle == object.handle then
+					table.remove(particleCastList, key)
+					self:DebugPrint("Removed cast particle " .. value.obj.name)
+					break
+				end
 			end
 		end
 		table.remove(debugList, #debugList)
@@ -900,6 +933,7 @@ cb.add(cb.load, function()
 		local StasisW = self.XerathMenu.misc.w_stasis:get() and player:spellSlot(SpellSlot.W).state == 0
 		local CastingE = self.XerathMenu.misc.e_casting:get() and player:spellSlot(SpellSlot.E).state == 0
 		local CastingW = self.XerathMenu.misc.w_casting:get() and player:spellSlot(SpellSlot.W).state == 0
+		local pingLatency = game.latency/1000
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
@@ -908,7 +942,6 @@ cb.add(cb.load, function()
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "AutoCalcs")
-			local pingLatency = game.latency/1000
 			local dashing = enemy.path and enemy.path.isDashing
 			local CCTime = pred.getCrowdControlledTime(enemy)
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
@@ -1015,6 +1048,37 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			::continue::
         end
+		table.remove(debugList, #debugList)
+		table.insert(debugList, "AutoParticleLoop")
+		local EParticle = (self.XerathMenu.misc.e_particle:get() and player:spellSlot(SpellSlot.E).state == 0)
+		local WParticle = (self.XerathMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
+		if (EParticle or WParticle) and particleCastList[1] and not hasCasted then
+			for key,value in ipairs(particleCastList) do
+				local particleOwner = value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object or value.obj.asEffectEmitter.targetAttachment.object
+				if not particleOwner then
+					particleOwner = {
+					isEnemy = true,
+					boundingRadius = 55
+					}
+				print("Homeless particle : " .. value.obj.name)
+				end
+				if player.pos:distance2D(value.castingPos) > 1125 or not particleOwner.isEnemy then goto nextParticle end
+				local particleTime = (value.time + value.castTime) - game.time
+				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
+				for key,value in ipairs(particleCastList) do
+					if EParticle and (particleTime - pingLatency) <= ELandingTime then
+						player:castSpell(SpellSlot.E, value.castingPos, true, false)
+						hasCasted = true
+						self:DebugPrint("Casted E on particle")
+					elseif WParticle and not EParticle and player.pos:distance2D(value.castingPos) <= 1000 and (particleTime - pingLatency + 0.15) <= 0.75 then
+						player:castSpell(SpellSlot.W, value.castingPos, true, false)
+						hasCasted = true
+						self:DebugPrint("Casted W on particle")
+					end
+				end
+				::nextParticle::
+			end
+		end
 		table.remove(debugList, #debugList)
 		if isUlting then
 			orb.setMovePause(0.075)
@@ -1374,14 +1438,18 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
         end
 		if not source or not source.isHero then return end
+		table.insert(debugList, "Exceptions")
+		if spell.name == "EvelynnR" and source.isAlly then
+			isSylasRCast = game.time
+		end
+		table.remove(debugList, #debugList)
 		table.insert(debugList, "SpellCast")
-		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
+		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay
 		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
 		local totalTime = castTime + channelTime
-		local endTime = game.time + totalTime
-
-		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
-			casting[source.handle] = game.time + castTime + channelTime
+		if totalTime > 0 then
+			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
     end
@@ -1397,13 +1465,12 @@ cb.add(cb.load, function()
 		end
 		if not source or not source.isHero then return end
 		table.insert(debugList, "SpellCast")
-		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
+		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay
 		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
 		local totalTime = castTime + channelTime
-		local endTime = game.time + totalTime
-
-		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
-			casting[source.handle] = game.time + castTime + channelTime
+		if totalTime > 0 then
+			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
     end

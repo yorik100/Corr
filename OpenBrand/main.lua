@@ -1237,13 +1237,12 @@ cb.add(cb.load, function()
         end
 		if not source or not source.isHero then return end
 		table.insert(debugList, "SpellCast")
-		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
+		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay
 		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
 		local totalTime = castTime + channelTime
-		local endTime = game.time + totalTime
-
-		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
-			casting[source.handle] = game.time + castTime + channelTime
+		if totalTime > 0 then
+			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
     end
@@ -1259,13 +1258,12 @@ cb.add(cb.load, function()
 		end
 		if not source or not source.isHero then return end
 		table.insert(debugList, "SpellCast")
-		local castTime = bit.band(spell.spellData.resource.flags, 4) == 4 and 0 or spell.castDelay
+		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
+		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay
 		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
 		local totalTime = castTime + channelTime
-		local endTime = game.time + totalTime
-
-		if not casting[source.handle] or endTime > casting[source.handle] and totalTime > 0 then
-			casting[source.handle] = game.time + castTime + channelTime
+		if totalTime > 0 then
+			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
     end
