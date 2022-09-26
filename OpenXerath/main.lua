@@ -69,7 +69,7 @@ cb.add(cb.load, function()
     -- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
-	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher"}
+	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf"}
 	local selfBuffToCheck = {"XerathArcanopulseChargeUp", "xerathrshots", "xerathascended2onhit", "SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
     local Xerath = {}
 	local buffs = {}
@@ -327,7 +327,7 @@ cb.add(cb.load, function()
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Xerath:godBuffTime(target)
 		local buffTime = 0
-		local buffList = {"KayleR", "TaricR", "SivirE", "FioraW", "PantheonE", "NocturneShroudofDarkness", "kindredrnodeathbuff", "XinZhaoRRangedImmunity", "gwenwmissilecatcher"}
+		local buffList = {"KayleR", "TaricR", "SivirE", "FioraW", "PantheonE", "NocturneShroudofDarkness", "kindredrnodeathbuff", "XinZhaoRRangedImmunity", "gwenwmissilecatcher", "fizzeicon"}
 		for i, name in ipairs(buffList) do
 			local buff = target:getBuff(name)
 			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) then
@@ -354,7 +354,7 @@ cb.add(cb.load, function()
 	
 	function Xerath:getStasisTime(target)
 		local buffTime = 0
-		local buffList = {"ChronoRevive", "BardRStasis", "ZhonyasRingShield"}
+		local buffList = {"ChronoRevive", "BardRStasis", "ZhonyasRingShield", "LissandraRSelf"}
 		for i, name in ipairs(buffList) do
 			local buff = target:getBuff(name)
 			if buff and buffTime < buff.remainingTime then
@@ -394,11 +394,19 @@ cb.add(cb.load, function()
 		return false
 	end
 	
-	function Xerath:MissileE()
-		if particleEList[1] or (disappearedE and disappearedE + 0.066 >= game.time) then
-			return true
-		else
-			return false
+	function Xerath:MissileE(target)
+		for key, value in ipairs(particleEList) do
+			local endPos = value.obj.endPosition
+			local missingLivingTime = game.time - value.time
+			local traveledDistance = missingLivingTime * value.obj.missileSpeed
+			local startPos = value.obj.startPosition:extend(value.obj.endPosition, traveledDistance)
+			local speed = value.obj.missileSpeed
+			local timeToReach = startPos:distance2D(endPos)/speed
+			local collisionTarget = pred.findSpellCollisions(player, self.eData, startPos, endPos, timeToReach)
+			local trueCollisionTarget = collisionTarget[1]
+			if trueCollisionTarget and trueCollisionTarget.handle == target.handle then
+				return true
+			end
 		end
 	end
 	
@@ -1224,7 +1232,7 @@ cb.add(cb.load, function()
 		self.qData.delay = 0.55
 		self.qData.range = 750
 		local p = pred.getPrediction(target, self.qData)
-		if godBuffTime <= 0.45 + pingLatency and (noKillBuffTime <= 0.45 + pingLatency or QDamage < totalHP) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) then
+		if godBuffTime <= 0.45 + pingLatency and (noKillBuffTime <= 0.45 + pingLatency or QDamage < totalHP) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) then
 			if not timeSinceUpdate or timeSinceUpdate < game.time - 0.15 then
 				player:castSpell(SpellSlot.Q, game.cursorPos, true, true)
 				instantQCast = {
@@ -1262,7 +1270,7 @@ cb.add(cb.load, function()
 			end
 			local canBeSlowed = canBeStunned and not target:getBuff("Highlander")
 			p = pred.getPrediction(target, self.qData)
-			if (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) and (not self:WillGetHitByW(target) or stunTime > 0 or not canBeSlowed or godBuffTime > 0) then
+			if (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) and (not self:WillGetHitByW(target) or stunTime > 0 or not canBeSlowed or godBuffTime > 0) then
 				player:updateChargeableSpell(SpellSlot.Q, p.castPosition)
 				hasCasted = true
 				self:DebugPrint("Casted Q with range of " .. math.ceil(self.qData.range) .. " on " .. mode)
@@ -1279,7 +1287,7 @@ cb.add(cb.load, function()
 		local w2 = pred.getPrediction(target, self.w2Data)
 		local p = (self.XerathMenu.misc.w_center_logic:get() or (w2 and w2.hitChance >= 6)) and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
-		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode then
+		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode then
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
 			self:DebugPrint("Casted W on " .. mode)
 			hasCasted = true
@@ -1292,7 +1300,7 @@ cb.add(cb.load, function()
 		local p = pred.getPrediction(target, self.eData)
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		-- Cast E with pred
-		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
+		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
 			player:castSpell(SpellSlot.E, p.castPosition, true, false)
 			hasCasted = true
 			self:DebugPrint("Casted E on " .. mode)
@@ -1304,7 +1312,7 @@ cb.add(cb.load, function()
 		if hasCasted then return 0 end
 		local p = pred.getPrediction(target, self.rData)
 		-- Cast R with pred
-		if godBuffTime <= 0.5 + pingLatency and (noKillBuffTime <= 0.5 + pingLatency or not ((((totalHP) - GetDamageR)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE() or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.r_hitchance:get()] or 1) then
+		if godBuffTime <= 0.5 + pingLatency and (noKillBuffTime <= 0.5 + pingLatency or not ((((totalHP) - GetDamageR)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.r_hitchance:get()] or 1) then
 			player:castSpell(SpellSlot.R, p.castPosition, true, false)
 			hasCasted = true
 			self:DebugPrint("Casted R")
