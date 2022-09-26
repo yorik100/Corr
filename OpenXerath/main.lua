@@ -1076,7 +1076,7 @@ cb.add(cb.load, function()
 				local particleTime = (value.time + value.castTime) - game.time
 				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
 				for key,value in ipairs(particleCastList) do
-					if EParticle and (particleTime - pingLatency) <= ELandingTime and not (pred.findSpellCollisions((particleOwner.homeless and player or particleOwner), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency))[1] then
+					if EParticle and (particleTime - pingLatency) <= ELandingTime and not pred.findSpellCollisions((particleOwner.homeless and player or particleOwner), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1] then
 						player:castSpell(SpellSlot.E, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted E on particle")
