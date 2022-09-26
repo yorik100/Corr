@@ -402,9 +402,8 @@ cb.add(cb.load, function()
 			local startPos = value.obj.startPosition:extend(value.obj.endPosition, traveledDistance)
 			local speed = value.obj.missileSpeed
 			local timeToReach = startPos:distance2D(endPos)/speed
-			local collisionTarget = pred.findSpellCollisions(player, self.eData, startPos, endPos, timeToReach)
-			local trueCollisionTarget = collisionTarget[1]
-			if trueCollisionTarget and trueCollisionTarget.handle == target.handle then
+			local collisionTarget = pred.findSpellCollisions(player, self.eData, startPos, endPos, timeToReach)[1]
+			if collisionTarget and collisionTarget.handle == target.handle then
 				return true
 			end
 		end
