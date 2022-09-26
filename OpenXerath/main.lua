@@ -332,6 +332,9 @@ cb.add(cb.load, function()
 			local buff = target:getBuff(name)
 			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) then
 				buffTime = buff.remainingTime
+				if buff.name == "PantheonE" then
+					buffTime = buffTime + 0.15 
+				end
 			end
 		end
 		return buffTime
@@ -937,14 +940,14 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0)
+			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0)
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "AutoCalcs")
 			local dashing = enemy.path and enemy.path.isDashing
 			local CCTime = pred.getCrowdControlledTime(enemy)
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
-			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(self.eData.range, true, player.pos)
+			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
 			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
 			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.15) < 0.6
 			local needsUltCasted = manualR and isUlting
@@ -1015,7 +1018,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "ManualE")
-			if self.XerathMenu.misc.w_before_e:get() and manualE and player:spellSlot(SpellSlot.W).state == 0 and enemy:isValidTarget(self.wData.range, true, player.pos) and orb.predictHP(enemy, 0.9 + pingLatency) > 0 and not enemy.isZombie and godBuffTimeAuto <= 0.9 + pingLatency and (noKillBuffTimeAuto <= 0.9 + pingLatency or WDamage < totalHP) and canBeSlowed then
+			if self.XerathMenu.misc.w_before_e:get() and manualE and player:spellSlot(SpellSlot.W).state == 0 and enemy.pos:distance2D(player.pos) <= self.wData.range and orb.predictHP(enemy, 0.9 + pingLatency) > 0 and not enemy.isZombie and godBuffTimeAuto <= 0.9 + pingLatency and (noKillBuffTimeAuto <= 0.9 + pingLatency or WDamage < totalHP) and canBeSlowed then
 					self:CastW(enemy,"manual", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
 					onceOnly = true
 					table.remove(debugList, #debugList)
@@ -1053,11 +1056,12 @@ cb.add(cb.load, function()
 		local WParticle = (self.XerathMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
 		if (EParticle or WParticle) and particleCastList[1] and not hasCasted then
 			for key,value in ipairs(particleCastList) do
-				local particleOwner = value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object or value.obj.asEffectEmitter.targetAttachment.object
+				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 				if not particleOwner then
 					particleOwner = {
 					isEnemy = true,
-					boundingRadius = 55
+					boundingRadius = 55,
+					homeless = true
 					}
 				print("Homeless particle : " .. value.obj.name)
 				end
@@ -1065,7 +1069,7 @@ cb.add(cb.load, function()
 				local particleTime = (value.time + value.castTime) - game.time
 				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
 				for key,value in ipairs(particleCastList) do
-					if EParticle and (particleTime - pingLatency) <= ELandingTime and not (pred.findSpellCollisions(player, self.eData, player.pos, value.castingPos, ELandingTime+pingLatency))[1] then
+					if EParticle and (particleTime - pingLatency) <= ELandingTime and not (pred.findSpellCollisions((particleOwner.homeless and player or particleOwner), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency))[1] then
 						player:castSpell(SpellSlot.E, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted E on particle")
@@ -1094,13 +1098,13 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Combo")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1500, true, player.pos)
+			local validTarget =  target and not target.isZombie and target:isValidTarget(1500, true, player.pos) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
 			local CanUseQ = self.XerathMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.XerathMenu.combo.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.75 + game.latency/1000):distance2D(player.pos) <= 1000 or target.pos:distance2D(player.pos) <= 1000)
-			local CanUseE = self.XerathMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target:isValidTarget(self.eData.range, true, player.pos)
+			local CanUseE = self.XerathMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= self.eData.range
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE then goto continue end
 			
@@ -1165,7 +1169,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1500, true, player.pos)
+			local validTarget =  target and not target.isZombie and target:isValidTarget(1500, true, player.pos) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")

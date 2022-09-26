@@ -276,6 +276,9 @@ cb.add(cb.load, function()
 			local buff = target:getBuff(name)
 			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) then
 				buffTime = buff.remainingTime
+				if buff.name == "PantheonE" then
+					buffTime = buffTime + 0.15 
+				end
 			end
 		end
 		return buffTime
@@ -694,10 +697,10 @@ cb.add(cb.load, function()
 			if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
 				for _, minion in pairs(objManager.aiBases.list) do
 					table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(660, true, player.pos)
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(660, true, player.pos) and minion.isTargetable
 					if not validTarget then goto continue1 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
 						if not validTarget then goto continue2 end
 						local BrandABlaze = minion.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
@@ -739,7 +742,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0)
+			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0)
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "AutoCalcs")
@@ -768,7 +771,7 @@ cb.add(cb.load, function()
 			if DashQ and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				if Ablaze or WHit then
 					self:CastQ(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(660, true, player.pos) then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
@@ -777,7 +780,7 @@ cb.add(cb.load, function()
 			if ChannelQ and channelingSpell and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				if Ablaze or WHit then
 					self:CastQ(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(660, true, player.pos) then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
@@ -786,7 +789,7 @@ cb.add(cb.load, function()
 			if CCQ and CCTime > 0 and (CCTime - pingLatency - 0.3) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				if Ablaze or WHit then
 					self:CastQ(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(660, true, player.pos) then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
@@ -795,7 +798,7 @@ cb.add(cb.load, function()
 			if CastingQ and CastTime > 0 and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				if Ablaze or WHit then
 					self:CastQ(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy:isValidTarget(660, true, player.pos) then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
@@ -838,11 +841,12 @@ cb.add(cb.load, function()
 		local WParticle = (self.BrandMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
 		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
 			for key,value in ipairs(particleCastList) do
-				local particleOwner = value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object or value.obj.asEffectEmitter.targetAttachment.object
+				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 				if not particleOwner then
 					particleOwner = {
 					isEnemy = true,
-					boundingRadius = 55
+					boundingRadius = 55,
+					homeless = true
 					}
 				print("Homeless particle : " .. value.obj.name)
 				end
@@ -850,7 +854,7 @@ cb.add(cb.load, function()
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
 				for key,value in ipairs(particleCastList) do
-					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not (pred.findSpellCollisions(player, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency))[1] then
+					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not (pred.findSpellCollisions((particleOwner.homeless and player or particleOwner), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency))[1] then
 						player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted Q on particle")
@@ -876,14 +880,14 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Combo")
 		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1100, true, player.pos)
+			local validTarget =  target and not target.isZombie and target:isValidTarget(1100, true, player.pos) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
 			local CanUseQ = self.BrandMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.BrandMenu.combo.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
-			local CanUseE = self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target:isValidTarget(660, true, player.pos)
-			local CanUseR = self.BrandMenu.combo.use_r:get() and player:spellSlot(SpellSlot.R).state == 0 and target:isValidTarget(750, true, player.pos)
+			local CanUseE = self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660
+			local CanUseR = self.BrandMenu.combo.use_r:get() and player:spellSlot(SpellSlot.R).state == 0 and target.pos:distance2D(player.pos) <= 750
 			if self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 then orb.setAttackPause(0.075) end
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE and not CanUseR then goto continue end
@@ -900,7 +904,7 @@ cb.add(cb.load, function()
 				if player and player.pos:distance2D(target.pos) <= 600 and player.pos:distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then rCanBounce = true end
 				if not rCanBounce then
 					for _, minion in pairs(objManager.aiBases.list) do
-						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos)
+						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos) and minion.isTargetable
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local minionAI = minion.asAIBase
 						if not validTarget or (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(enemyPos) > 600 then goto continue2 end          
@@ -911,7 +915,7 @@ cb.add(cb.load, function()
 				end
 				if self.BrandMenu.combo.r_aoe:get() > 0 then
 					for index2, target2 in pairs(ts.getTargets()) do
-						local validTarget =  target2 and target2:isValidTarget(600, true, target.pos)
+						local validTarget =  target2 and target2:isValidTarget(600, true, target.pos) and target2.isTargetable
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local bounceEnemyPos = target2.path and pred.positionAfterTime(target2, 0.6 + game.latency/1000) or target2.pos
 						if not validTarget or bounceEnemyPos:distance2D(enemyPos) > 600 then goto continue3 end
@@ -987,10 +991,10 @@ cb.add(cb.load, function()
 			local chosenMinion = nil
 			local distanceChamp = nil
 				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos)
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetable
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
 						if not validTarget then goto continue5 end
 						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
@@ -1021,10 +1025,10 @@ cb.add(cb.load, function()
 			local rTotalDamage = nil
 			local distanceChamp = nil
 			for _, minion in pairs(objManager.aiBases.list) do
-				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(600, true, player.pos)
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(600, true, player.pos) and minion.isTargetable
 				if not validTarget then goto continue6 end
 				for index, target in pairs(ts.getTargets()) do
-					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
+					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
 					if not validTarget then goto continue7 end
 					minionAI = minion.asAIBase
 					if (minionAI.path and pred.positionAfterTime(minionAI, 0.6 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then
@@ -1078,13 +1082,13 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1100, true, player.pos)
+			local validTarget =  target and not target.isZombie and target:isValidTarget(1100, true, player.pos) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
 			local CanUseQ = self.BrandMenu.harass.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.BrandMenu.harass.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
-			local CanUseE = self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target:isValidTarget(660, true, player.pos)
+			local CanUseE = self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660
 			if self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 then orb.setAttackPause(0.075) end
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE then goto continue end
@@ -1131,10 +1135,10 @@ cb.add(cb.load, function()
 			local chosenMinion = nil
 			local distanceChamp = nil
 				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos)
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetable
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and minion.handle ~= target.handle
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
 						if not validTarget then goto continue5 end
 						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
