@@ -1360,7 +1360,7 @@ cb.add(cb.load, function()
 		local totalTime = castTime + channelTime
 		local target = spell.target
 		if target.asAIBase and target.asAIBase.isPlant and target.name == 'PlantSatchel' then
-			if sender.pos:distance2D(target.pos) <= 325 then
+			if source.pos:distance2D(target.pos) <= 325 then
 				totalTime = 0
 			end
 		end
