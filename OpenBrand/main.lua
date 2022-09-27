@@ -517,7 +517,7 @@ cb.add(cb.load, function()
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "W_ImpactWarning") and object.isEffectEmitter then
 			castPos = object.pos
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.6, castingPos = object.pos})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)

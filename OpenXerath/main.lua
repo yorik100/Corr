@@ -280,16 +280,20 @@ cb.add(cb.load, function()
         mm:header('misc', 'Misc')
 		mm.misc:boolean('e_dash', 'Auto E on dashes', true)
 		mm.misc:boolean('w_dash', 'Auto W on dashes', true)
+		mm.misc:boolean('q_dash', 'Auto Q release on dashes', true)
 		mm.misc:boolean('e_channel', 'Auto E on channels', true)
 		mm.misc:boolean('w_channel', 'Auto W on channels', true)
 		mm.misc:boolean('e_stun', 'Auto E on stuns', true)
 		mm.misc:boolean('w_stun', 'Auto W on stuns', true)
 		mm.misc:boolean('e_stasis', 'Auto E on stasis', true)
 		mm.misc:boolean('w_stasis', 'Auto W on stasis', true)
+		mm.misc:boolean('q_stasis', 'Auto Q release on stasis', true)
 		mm.misc:boolean('e_casting', 'Auto E on spellcast/attack', true)
 		mm.misc:boolean('w_casting', 'Auto W on spellcast/attack', true)
+		mm.misc:boolean('q_casting', 'Auto Q release on stasis', true)
 		mm.misc:boolean('e_particle', 'Auto E on particles', true)
 		mm.misc:boolean('w_particle', 'Auto W on particles', true)
+		mm.misc:boolean('q_particle', 'Auto W release on particles', true)
 		mm.misc:boolean('w_center_logic', 'Try to W center', true)
 		mm.misc:boolean('auto_r', 'Auto R2', false)
 		mm.misc:keybind('manual_r', 'Manual R', 0x54, false, false)
@@ -655,7 +659,7 @@ cb.add(cb.load, function()
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "W_ImpactWarning") and object.isEffectEmitter then
 			castPos = object.pos
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.6, castingPos = object.pos})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)
@@ -960,10 +964,13 @@ cb.add(cb.load, function()
 		local ChannelW = self.XerathMenu.misc.w_channel:get() and player:spellSlot(SpellSlot.W).state == 0
 		local DashE = self.XerathMenu.misc.e_dash:get() and player:spellSlot(SpellSlot.E).state == 0
 		local DashW = self.XerathMenu.misc.w_dash:get() and player:spellSlot(SpellSlot.W).state == 0
+		local DashQ = self.XerathMenu.misc.q_dash:get() and player:spellSlot(SpellSlot.Q).state == 0 and qBuff
 		local StasisE = self.XerathMenu.misc.e_stasis:get() and player:spellSlot(SpellSlot.E).state == 0
 		local StasisW = self.XerathMenu.misc.w_stasis:get() and player:spellSlot(SpellSlot.W).state == 0
+		local StasisQ = self.XerathMenu.misc.q_stasis:get() and player:spellSlot(SpellSlot.Q).state == 0 and qBuff
 		local CastingE = self.XerathMenu.misc.e_casting:get() and player:spellSlot(SpellSlot.E).state == 0
 		local CastingW = self.XerathMenu.misc.w_casting:get() and player:spellSlot(SpellSlot.W).state == 0
+		local CastingQ = self.XerathMenu.misc.q_casting:get() and player:spellSlot(SpellSlot.Q).state == 0 and qBuff
 		local pingLatency = game.latency/1000
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
@@ -981,7 +988,7 @@ cb.add(cb.load, function()
 			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.15) < 0.6
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
-			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW)) and (stasisTime <= 0 or not (StasisE or StasisW)) and (CastTime <= 0 or not (CastingE or CastingW)) and not manualE and not needsUltCasted then goto continue end
+			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (CastTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
 			
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
