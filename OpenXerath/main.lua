@@ -620,26 +620,26 @@ cb.add(cb.load, function()
 		elseif object.name == "XerathMageSpearMissile" and object.caster.handle == player.handle then
 			table.insert(particleEList, {obj = object, time = game.time})
 			self:DebugPrint("Added missile E")
-		elseif string.find(object.name, "_R_Gatemarker") then
+		elseif string.find(object.name, "_R_Gatemarker") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "_R_ChargeIndicator") then
+		elseif string.find(object.name, "_R_ChargeIndicator") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump") then
+		elseif string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump") and object.isEffectEmitter then
 			castPos = object.pos + object.asEffectEmitter.animationComponent.forward*1350
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.2, castingPos = castPos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "R_Tar_Ground") then
+		elseif string.find(object.name, "R_Tar_Ground") and object.isEffectEmitter then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.75, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "R_Landing") and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
+		elseif string.find(object.name, "R_Landing") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "W_ImpactWarning") then
+		elseif string.find(object.name, "W_ImpactWarning") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.6, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
