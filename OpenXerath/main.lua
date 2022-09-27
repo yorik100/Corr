@@ -329,12 +329,20 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 	end
 	
-	function Xerath:gwenWParticlePos(target)
-		for key, value in ipairs(particleGwenList) do
-			if target.handle == value.particleOwner.handle then
-				return value.obj.pos
+	function Xerath:debugFlush()
+		if debugList[1] then
+			local debugText = ""
+			for key,value in ipairs(debugList) do 
+				debugText = debugText .. " " .. value
 			end
+			print("[OpenDebug] Error found in" .. debugText)
+			debugList = {}
 		end
+	end
+	
+	function Xerath:gwenWParticlePos(target)
+		local particle = particleGwenList[target.handle]
+		return particle.pos
 	end
 	
 	-- To know the remaining time of someone's invulnerable or spellshielded
@@ -600,14 +608,7 @@ cb.add(cb.load, function()
     end
 	
 	function Xerath:OnGlow()
-		if debugList[1] then
-			local debugText = ""
-			for key,value in ipairs(debugList) do 
-				debugText = debugText .. " " .. value
-			end
-			print("[OpenDebug] Error found in" .. debugText)
-			debugList = {}
-		end
+		self:debugFlush()
 		table.insert(debugList, "Glow")
 		if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
 			if QTarget.isValid and QTarget.isVisible and not QTarget.isDead then
@@ -636,7 +637,7 @@ cb.add(cb.load, function()
 		elseif string.find(object.name, "_W_MistArea") and object.isEffectEmitter and object.asEffectEmitter.attachment.object then
 			local owner = object.asEffectEmitter.attachment.object
 			local owner2 = owner.asAttackableUnit.owner
-			table.insert(particleGwenList, {obj = object, particleOwner = owner2})
+			particleGwenList[owner2.handle] = object
 			self:DebugPrint("Added particle Gwen")
 		elseif string.find(object.name, "_R_Gatemarker") and object.isEffectEmitter then
 			castPos = object.pos
@@ -667,14 +668,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Xerath:OnDelete(object)
-		if debugList[1] then
-			local debugText = ""
-			for key,value in ipairs(debugList) do 
-				debugText = debugText .. " " .. value
-			end
-			print("[OpenDebug] Error found in" .. debugText)
-			debugList = {}
-		end
+		self:debugFlush()
 		table.insert(debugList, "Delete")
 		if object.name == "XerathMageSpearMissile" then
 			for key,value in ipairs(particleEList) do
@@ -700,13 +694,13 @@ cb.add(cb.load, function()
 				rshots = (rshots - 1 >= 1 and rshots - 1 or nil)
 			end
 		elseif string.find(object.name, "_W_MistArea") then
-			for key,value in ipairs(particleGwenList) do
-				if value.obj.handle == object.handle then
-					table.remove(particleGwenList, key)
-					self:DebugPrint("Removed particle Gwen")
-					break
-				end
-			end
+			local owner = object.asEffectEmitter.attachment.object
+			if not owner then goto endMist end
+			local owner2 = owner.asAttackableUnit.owner
+			if not owner2 then goto endMist end
+			particleGwenList[owner2.handle] = nil
+			self:DebugPrint("Removed particle Gwen")
+			::endMist::
 		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") then
 			for key,value in ipairs(particleCastList) do
 				if value.obj.handle == object.handle then
@@ -721,14 +715,7 @@ cb.add(cb.load, function()
 	
 	-- Seems more optimal to make a buff list like that, I guess, I was told so
     function Xerath:OnBuff(source, buff, gained)
-		if debugList[1] then
-			local debugText = ""
-			for key,value in ipairs(debugList) do 
-				debugText = debugText .. " " .. value
-			end
-			print("[OpenDebug] Error found in" .. debugText)
-			debugList = {}
-		end
+		self:debugFlush()
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
 		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
@@ -767,14 +754,7 @@ cb.add(cb.load, function()
     end
 
 	function Xerath:OnTick()
-		if debugList[1] then
-			local debugText = ""
-			for key,value in ipairs(debugList) do 
-				debugText = debugText .. " " .. value
-			end
-			print("[OpenDebug] Error found in" .. debugText)
-			debugList = {}
-		end
+		self:debugFlush()
 		table.insert(debugList, "Tick")
 		local targetTest = player
 		hasCasted = false
@@ -1351,14 +1331,7 @@ cb.add(cb.load, function()
     -- This function will be called every time the player draws a screen (based on FPS)
     -- This is where all drawing code will be executed
     function Xerath:OnDraw()
-		if debugList[1] then
-			local debugText = ""
-			for key,value in ipairs(debugList) do 
-				debugText = debugText .. " " .. value
-			end
-			print("[OpenDebug] Error found in" .. debugText)
-			debugList = {}
-		end
+		self:debugFlush()
 		table.insert(debugList, "Draw")
 		table.insert(debugList, "Draw1")
         -- Check if the menu option is enabled to draw the Q range
@@ -1455,14 +1428,7 @@ cb.add(cb.load, function()
 
     -- This function will be called every time someone did cast a spell.
     function Xerath:OnCastSpell(source, spell)
-		if debugList[1] then
-			local debugText = ""
-			for key,value in ipairs(debugList) do 
-				debugText = debugText .. " " .. value
-			end
-			print("[OpenDebug] Error found in" .. debugText)
-			debugList = {}
-		end
+		self:debugFlush()
         -- Compare the handler of the source to our player 
         if source.handle == player.handle then
 			table.insert(debugList, "CastSpell")
@@ -1494,14 +1460,7 @@ cb.add(cb.load, function()
     end
 	
     function Xerath:OnBasicAttack(source, spell)
-		if debugList[1] then
-			local debugText = ""
-			for key,value in ipairs(debugList) do 
-				debugText = debugText .. " " .. value
-			end
-			print("[OpenDebug] Error found in" .. debugText)
-			debugList = {}
-		end
+		self:debugFlush()
 		if not source or not source.isHero then return end
 		table.insert(debugList, "SpellCast")
 		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
