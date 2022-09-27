@@ -641,7 +641,7 @@ cb.add(cb.load, function()
 			local owner2 = owner.asAttackableUnit.owner
 			particleGwenList[owner2.handle] = object
 			self:DebugPrint("Added particle Gwen")
-		elseif string.find(object.name, "_R_Gatemarker_Red") and object.isEffectEmitter then
+		elseif string.find(object.name, "Twisted") and string.find(object.name, "_R_Gatemarker_Red") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
@@ -660,7 +660,7 @@ cb.add(cb.load, function()
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "Tahm")  and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
+		elseif string.find(object.name, "Tahm") and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
