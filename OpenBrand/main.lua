@@ -1174,7 +1174,7 @@ cb.add(cb.load, function()
 			local WTime = self:WillGetHitByW(target)
 			local AblazeBuff = target.asAIBase:findBuff("BrandAblaze")
 			local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.q_hitchance:get()] or 1)
-			if p and p.castPosition.isValid and p.hitChance >= hitChanceMode and ((WTime and WTime < p.timeToTarget-0.2+pingLatency) or (AblazeBuff and AblazeBuff.remainingTime >= p.timeToTarget+pingLatency) or ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
+			if p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.qData.range and p.hitChance >= hitChanceMode and ((WTime and WTime < p.timeToTarget-0.2+pingLatency) or (AblazeBuff and AblazeBuff.remainingTime >= p.timeToTarget+pingLatency) or ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				player:castSpell(SpellSlot.Q, p.castPosition, true, false)
 				hasCasted = true
 				self:DebugPrint("Casted Q on " .. mode)
@@ -1190,7 +1190,7 @@ cb.add(cb.load, function()
 		if hasCasted then return 0 end
 		local p = pred.getPrediction(target, self.wData)
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.w_hitchance:get()] or 1)
-		if godBuffTime <= 0.7 + pingLatency and (noKillBuffTime <= 0.7 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and p and p.castPosition.isValid and p.hitChance >= hitChanceMode then
+		if godBuffTime <= 0.7 + pingLatency and (noKillBuffTime <= 0.7 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.wData.range and p.hitChance >= hitChanceMode then
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
 			hasCasted = true
 			self:DebugPrint("Casted W on " .. mode)
