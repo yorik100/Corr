@@ -1501,6 +1501,12 @@ cb.add(cb.load, function()
 		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay
 		local channelTime = spell.spellData.resource.canMoveWhileChanneling and 0 or spell.spellData.resource.channelDuration -- Add channelduration
 		local totalTime = castTime + channelTime
+		local target = spell.target
+		if target.asAIBase and target.asAIBase.isPlant and target.name == 'PlantSatchel' then
+			if sender.pos:distance2D(target.pos) <= 325 then
+				totalTime = 0
+			end
+		end
 		if totalTime > 0 then
 			casting[source.handle] = game.time + totalTime
 		end
