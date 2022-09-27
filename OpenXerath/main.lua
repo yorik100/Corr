@@ -80,6 +80,7 @@ cb.add(cb.load, function()
 	local particleWList = {}
 	local particleRList = {}
 	local particleEList = {}
+	local particleGwenList = {}
 	local particleFlag = false
 	local disappearedE = 0
 	local disappearedRTime = 0
@@ -324,13 +325,21 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 	end
 	
+	function Xerath:gwenWParticlePos(target)
+		for key, value in ipairs(particleGwenList) do
+			if target.handle == value.particleOwner.handle then
+				return value.obj.pos
+			end
+		end
+	end
+	
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Xerath:godBuffTime(target)
 		local buffTime = 0
 		local buffList = {"KayleR", "TaricR", "SivirE", "FioraW", "PantheonE", "NocturneShroudofDarkness", "kindredrnodeathbuff", "XinZhaoRRangedImmunity", "gwenwmissilecatcher", "fizzeicon"}
 		for i, name in ipairs(buffList) do
 			local buff = target:getBuff(name)
-			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) then
+			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) and (buff.name ~= "gwenwmissilecatcher" or player.pos:distance2D(self:gwenWParticlePos(target)) > 440) then
 				buffTime = buff.remainingTime
 				if buff.name == "PantheonE" then
 					buffTime = buffTime + 0.15 
@@ -402,7 +411,7 @@ cb.add(cb.load, function()
 			local startPos = value.obj.startPosition:extend(value.obj.endPosition, traveledDistance)
 			local speed = value.obj.missileSpeed
 			local timeToReach = startPos:distance2D(endPos)/speed
-			local collisionTarget = pred.findSpellCollisions(player, self.eData, startPos, endPos, timeToReach)[1]
+			local collisionTarget = pred.findSpellCollisions(nil, self.eData, startPos, endPos, timeToReach)[1]
 			if collisionTarget and collisionTarget.handle == target.handle then
 				return true
 			end
@@ -598,12 +607,12 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Glow")
 		if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
 			if QTarget.isValid and QTarget.isVisible and not QTarget.isDead then
-				QTarget:addGlow(graphics.argb(255, 255, 127, 0), 3, 0)
+				QTarget:addGlow(graphics.argb(255, 255, 127, 0), ((10*-game.time) % 4) + 1, 0)
 			end
 		end
 		if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
 			if RTarget.isValid and RTarget.isVisible and not RTarget.isDead then
-				RTarget:addGlow(graphics.argb(255, 255, 0, 0), 3, 0)
+				RTarget:addGlow(graphics.argb(255, 255, 0, 0), ((10*-game.time) % 4) + 1, 0)
 			end
 		end
 		table.remove(debugList, #debugList)
@@ -617,9 +626,14 @@ cb.add(cb.load, function()
 		elseif string.find(object.name, "_W_aoe_green") and string.find(object.name, "Xerath_") then
 			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
-		elseif object.name == "XerathMageSpearMissile" and object.caster.handle == player.handle then
+		elseif object.name == "XerathMageSpearMissile" and object.caster.isAlly then
 			table.insert(particleEList, {obj = object, time = game.time})
 			self:DebugPrint("Added missile E")
+		elseif string.find(object.name, "_W_MistArea") and object.isEffectEmitter and object.asEffectEmitter.attachment.object then
+			local owner = object.asEffectEmitter.attachment.object
+			local owner2 = owner.asAttackableUnit.owner
+			table.insert(particleGwenList, {obj = object, particleOwner = owner2})
+			self:DebugPrint("Added particle Gwen")
 		elseif string.find(object.name, "_R_Gatemarker") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
@@ -680,6 +694,14 @@ cb.add(cb.load, function()
 			end
 			if rshots then
 				rshots = (rshots - 1 >= 1 and rshots - 1 or nil)
+			end
+		elseif string.find(object.name, "_W_MistArea") then
+			for key,value in ipairs(particleGwenList) do
+				if value.obj.handle == object.handle then
+					table.remove(particleGwenList, key)
+					self:DebugPrint("Removed particle Gwen")
+					break
+				end
 			end
 		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") then
 			for key,value in ipairs(particleCastList) do
@@ -1076,7 +1098,7 @@ cb.add(cb.load, function()
 				local particleTime = (value.time + value.castTime) - game.time
 				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
 				for key,value in ipairs(particleCastList) do
-					if EParticle and (particleTime - pingLatency) <= ELandingTime and not pred.findSpellCollisions((particleOwner.homeless and player or particleOwner), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1] then
+					if EParticle and (particleTime - pingLatency) <= ELandingTime and not pred.findSpellCollisions(particleOwner, self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1] then
 						player:castSpell(SpellSlot.E, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted E on particle")

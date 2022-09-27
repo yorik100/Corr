@@ -74,6 +74,7 @@ cb.add(cb.load, function()
     local Brand = {}
 	local buffs = {}
 	local particleWList = {}
+	local particleGwenList = {}
 	local debugList = {}
 	local drawRDamage = {}
 	local RKillable = {}
@@ -268,13 +269,21 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 	end
 	
+	function Brand:gwenWParticlePos(target)
+		for key, value in ipairs(particleGwenList) do
+			if target.handle == value.particleOwner.handle then
+				return value.obj.pos
+			end
+		end
+	end
+	
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Brand:godBuffTime(target)
 		local buffTime = 0
 		local buffList = {"KayleR", "TaricR", "SivirE", "FioraW", "PantheonE", "NocturneShroudofDarkness", "kindredrnodeathbuff", "XinZhaoRRangedImmunity", "gwenwmissilecatcher", "fizzeicon"}
 		for i, name in ipairs(buffList) do
 			local buff = target:getBuff(name)
-			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) then
+			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) and (buff.name ~= "gwenwmissilecatcher" or player.pos:distance2D(self:gwenWParticlePos(target)) > 440) then
 				buffTime = buff.remainingTime
 				if buff.name == "PantheonE" then
 					buffTime = buffTime + 0.15 
@@ -482,6 +491,11 @@ cb.add(cb.load, function()
 		if string.find(object.name, "_POF_tar_green") and string.find(object.name, "Brand_") then
 			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
+		elseif string.find(object.name, "_W_MistArea") and object.isEffectEmitter and object.asEffectEmitter.attachment.object then
+			local owner = object.asEffectEmitter.attachment.object
+			local owner2 = owner.asAttackableUnit.owner
+			table.insert(particleGwenList, {obj = object, particleOwner = owner2})
+			self:DebugPrint("Added particle Gwen")
 		elseif string.find(object.name, "_R_Gatemarker") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
@@ -524,8 +538,15 @@ cb.add(cb.load, function()
 			for key,value in ipairs(particleWList) do
 				if value.obj.handle == object.handle then
 					table.remove(particleWList, key)
-					disappearedE = game.time
 					self:DebugPrint("Removed particle W")
+					break
+				end
+			end
+		elseif string.find(object.name, "_W_MistArea") then
+			for key,value in ipairs(particleGwenList) do
+				if value.obj.handle == object.handle then
+					table.remove(particleGwenList, key)
+					self:DebugPrint("Removed particle Gwen")
 					break
 				end
 			end
@@ -854,7 +875,7 @@ cb.add(cb.load, function()
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
 				for key,value in ipairs(particleCastList) do
-					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not (pred.findSpellCollisions((particleOwner.homeless and player or particleOwner), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency))[1] then
+					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not pred.findSpellCollisions(particleOwner, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1] then
 						player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted Q on particle")
