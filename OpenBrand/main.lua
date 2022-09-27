@@ -489,6 +489,7 @@ cb.add(cb.load, function()
 	
 	function Brand:OnCreate(object)
 		table.insert(debugList, "Create")
+		
 		if string.find(object.name, "_POF_tar_green") and string.find(object.name, "Brand_") then
 			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
@@ -497,26 +498,26 @@ cb.add(cb.load, function()
 			local owner2 = owner.asAttackableUnit.owner
 			particleGwenList[owner2.handle] = object
 			self:DebugPrint("Added particle Gwen")
-		elseif string.find(object.name, "_R_Gatemarker") and object.isEffectEmitter then
+		elseif string.find(object.name, "_R_Gatemarker_Red") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "_R_ChargeIndicator") and object.isEffectEmitter then
+		elseif string.find(object.name, "Ekko_") and string.find(object.name, "_R_ChargeIndicator") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump") and object.isEffectEmitter then
+		elseif string.find(object.name, "Pantheon_") and string.find(object.name, "_R_Update_Indicator_Enemy") and not string.find(object.name, "PreJump") and object.isEffectEmitter then
 			castPos = object.pos + object.asEffectEmitter.animationComponent.forward*1350
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.2, castingPos = castPos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "R_Tar_Ground") and object.isEffectEmitter then
+		elseif string.find(object.name, "Galio_") and string.find(object.name, "_R_Tar_Ground_Enemy") and object.isEffectEmitter then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.75, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "R_Landing") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
+		elseif string.find(object.name, "Evelynn_") and string.find(object.name, "_R_Landing") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "W_ImpactWarning") and object.isEffectEmitter then
+		elseif string.find(object.name, "Tahm")  and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
@@ -1294,7 +1295,7 @@ cb.add(cb.load, function()
         end
 		if not source or not source.isHero then return end
 		table.insert(debugList, "Exceptions")
-		if spell.name == "EvelynnR" and source.isAlly then
+		if (spell.name == "EvelynnR" or spell.name == "EkkoR") and source.isAlly then
 			isSylasRCast = game.time
 		end
 		table.remove(debugList, #debugList)
