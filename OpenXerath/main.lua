@@ -969,7 +969,7 @@ cb.add(cb.load, function()
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
 			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
-			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.15) < 0.6
+			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
 			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (CastTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
@@ -1034,7 +1034,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWStasis")
-			if StasisW and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.15) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
+			if StasisW and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
 				self:CastW(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
@@ -1049,7 +1049,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQStasis")
-			if StasisQ and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.15) < 0.5 and godBuffTimeAuto <= 0.4 + pingLatency and (noKillBuffTimeAuto <= 0.4 + pingLatency or QDamage < totalHP) then
+			if StasisQ and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.5 and godBuffTimeAuto <= 0.4 + pingLatency and (noKillBuffTimeAuto <= 0.4 + pingLatency or QDamage < totalHP) then
 				self:CastQ2(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, qBuff, CCTime, canBeStunned)
 			end
 			table.remove(debugList, #debugList)
@@ -1111,7 +1111,7 @@ cb.add(cb.load, function()
 						player:castSpell(SpellSlot.E, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted E on particle")
-					elseif WParticle and not EParticle and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.15) <= 0.75 then
+					elseif WParticle and not EParticle and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.2) <= 0.75 then
 						player:castSpell(SpellSlot.W, value.castingPos, true, false)
 						hasCasted = true
 						self:DebugPrint("Casted W on particle")
@@ -1119,7 +1119,7 @@ cb.add(cb.load, function()
 				end
 				goto nextParticle
 				::qBuffHandling::
-				if player.pos:distance2D(value.castingPos) <= self:GetChargeRange(1500, 750, 1.5) and (particleTime - pingLatency + 0.15) <= 0.5 then
+				if player.pos:distance2D(value.castingPos) <= self:GetChargeRange(1500, 750, 1.5) and (particleTime - pingLatency + 0.2) <= 0.5 then
 					player:updateChargeableSpell(SpellSlot.Q, value.castingPos)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")
