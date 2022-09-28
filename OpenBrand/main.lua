@@ -775,34 +775,34 @@ cb.add(cb.load, function()
 			if DashQ and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				if Ablaze or WHit then
 					self:CastQ(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQInterrupt")
 			if ChannelQ and channelingSpell and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if (Ablaze or WHit) and enemy.isVisible then
+				if Ablaze or WHit then
 					self:CastQ(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQCC")
 			if CCQ and CCTime > 0 and (CCTime - pingLatency - 0.3) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if (Ablaze or WHit) and enemy.isVisible then
+				if Ablaze or WHit then
 					self:CastQ(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQCasting")
 			if CastingQ and CastTime > 0 and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if (Ablaze or WHit) and enemy.isVisible then
+				if Ablaze or WHit then
 					self:CastQ(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
+				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
 				end
 			end
