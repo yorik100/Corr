@@ -1299,7 +1299,7 @@ cb.add(cb.load, function()
 			self.qData.range = chargeRange
 			local CastTime = target.activeSpell and casting[target.handle] and game.time < casting[target.handle] and (casting[target.handle] - game.time) or 0
 			if self.qData.range < 1500 then
-				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 and target.path.count > 1 then
+				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 and target.path and target.path.count > 1 then
 					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
 				end
 				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency)
