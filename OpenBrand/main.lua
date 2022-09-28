@@ -562,7 +562,7 @@ cb.add(cb.load, function()
 		self:debugFlush()
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
-		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and self:getStasisTime(source) <= 0 then
+		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
 				buffs["Time" .. source.handle] = game.time + 4
 				self:DebugPrint("Detected Guardian angel on " .. source.skinName)
 		end
