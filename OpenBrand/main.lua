@@ -744,7 +744,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0)
+			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or (enemy.isValid and ((enemy.path and enemy.path.count > 1) or enemy.isRecalling))) and enemy.isTargetable and not enemy.isInvulnerable and not enemy.isDead
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -782,7 +782,7 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQInterrupt")
 			if ChannelQ and channelingSpell and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if Ablaze or WHit then
+				if (Ablaze or WHit) and enemy.isVisible then
 					self:CastQ(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
 				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
@@ -791,7 +791,7 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQCC")
 			if CCQ and CCTime > 0 and (CCTime - pingLatency - 0.3) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if Ablaze or WHit then
+				if (Ablaze or WHit) and enemy.isVisible then
 					self:CastQ(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
 				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
@@ -800,7 +800,7 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQCasting")
 			if CastingQ and CastTime > 0 and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if Ablaze or WHit then
+				if (Ablaze or WHit) and enemy.isVisible then
 					self:CastQ(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
 				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= 660 then
 					self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
@@ -1029,7 +1029,7 @@ cb.add(cb.load, function()
 			local rTotalDamage = nil
 			local distanceChamp = nil
 			for _, minion in pairs(objManager.aiBases.list) do
-				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(600, true, player.pos) and minion.isTargetable
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(600, true, player.pos) and minion.isTargetable and not target.isInvulnerable
 				if not validTarget then goto continue6 end
 				for index, target in pairs(ts.getTargets()) do
 					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
@@ -1086,7 +1086,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1100 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1100 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
