@@ -884,13 +884,13 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Combo")
 		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1100, true, player.pos) and target.isTargetable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1100 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
 			local CanUseQ = self.BrandMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.BrandMenu.combo.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
-			local CanUseE = self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660
+			local CanUseE = self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660 and target.isVisible
 			local CanUseR = self.BrandMenu.combo.use_r:get() and player:spellSlot(SpellSlot.R).state == 0 and target.pos:distance2D(player.pos) <= 750
 			if self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 then orb.setAttackPause(0.075) end
 			table.remove(debugList, #debugList)
@@ -1086,13 +1086,13 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1100, true, player.pos) and target.isTargetable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1100 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
 			local CanUseQ = self.BrandMenu.harass.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.BrandMenu.harass.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
-			local CanUseE = self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660
+			local CanUseE = self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660 and target.isVisible
 			if self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 then orb.setAttackPause(0.075) end
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE then goto continue end
