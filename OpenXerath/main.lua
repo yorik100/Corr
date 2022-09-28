@@ -720,7 +720,7 @@ cb.add(cb.load, function()
 		self:debugFlush()
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
-		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
+		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and self:getStasisTime(source) <= 0 then
 				buffs["Time" .. source.handle] = game.time + 4
 				self:DebugPrint("Detected Guardian angel on " .. source.skinName)
 		end
@@ -960,6 +960,8 @@ cb.add(cb.load, function()
 			local stasisTime = self:getStasisTime(enemy)
 			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0)
 			if not validTarget then goto continue end
+			
+			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
 			
 			table.insert(debugList, "AutoCalcs")
 			local dashing = enemy.path and enemy.path.isDashing
@@ -1297,7 +1299,7 @@ cb.add(cb.load, function()
 			self.qData.range = chargeRange
 			local CastTime = target.activeSpell and casting[target.handle] and game.time < casting[target.handle] and (casting[target.handle] - game.time) or 0
 			if self.qData.range < 1500 then
-				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 then
+				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 and target.path.count > 1 then
 					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
 				end
 				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency)
