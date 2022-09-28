@@ -1143,7 +1143,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Combo")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1500, true, player.pos) and target.isTargetable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
@@ -1212,7 +1212,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and target:isValidTarget(1500, true, player.pos) and target.isTargetable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
@@ -1299,7 +1299,7 @@ cb.add(cb.load, function()
 			self.qData.range = chargeRange
 			local CastTime = target.activeSpell and casting[target.handle] and game.time < casting[target.handle] and (casting[target.handle] - game.time) or 0
 			if self.qData.range < 1500 then
-				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 and target.path and target.path.count > 1 then
+				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 and target.path and target.path.count > 1 and not target.isRecalling then
 					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
 				end
 				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency)
