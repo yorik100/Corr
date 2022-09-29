@@ -1270,7 +1270,7 @@ cb.add(cb.load, function()
         if hasCasted then return 0 end
 		self.qData.delay = 0.55
 		self.qData.range = 750
-		self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*1.5)
+		self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*2)
 		local p = pred.getPrediction(target, self.qData)
 		if godBuffTime <= 0.45 + pingLatency and (noKillBuffTime <= 0.45 + pingLatency or QDamage < totalHP) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.qData.range and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) then
 			if not timeSinceUpdate or timeSinceUpdate < game.time - 0.15 then
@@ -1306,7 +1306,7 @@ cb.add(cb.load, function()
 				if target.path and not target.path.isDashing and target.path.count > 1 then
 					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
 				end
-				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*1.5)
+				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*2)
 			end
 			local canBeSlowed = canBeStunned and not target:getBuff("Highlander")
 			p = pred.getPrediction(target, self.qData)
