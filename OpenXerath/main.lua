@@ -974,7 +974,7 @@ cb.add(cb.load, function()
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
 			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
 			local prioCast = dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)
-			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
+			local manualR = enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
 			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (CastTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
@@ -1078,7 +1078,8 @@ cb.add(cb.load, function()
 			table.insert(debugList, "ManualUlt")
 			if needsUltCasted and (orb.predictHP(enemy, 0.5 + pingLatency) > 0 or stasisTime > 0) and godBuffTimeAuto <= 0.75 + pingLatency and (noKillBuffTimeAuto <= 0.75 + pingLatency or RDamage < totalHP) then
 				if not self:WillGetHitByR(enemy) or not ((((totalHP) - RDamage)/enemy.maxHealth) < (ElderBuff and 0.2 or 0)) then
-					if player:spellSlot(SpellSlot.R).state == 0 then
+					local mustShoot = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast)
+					if player:spellSlot(SpellSlot.R).state == 0 and mustShoot then
 						self:CastR(enemy, godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, RDamage, totalHP, CCTime, prioCast)
 					end
 					RTarget = enemy
