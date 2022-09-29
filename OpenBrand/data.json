@@ -1,7 +1,7 @@
 {
   "Name": "OpenBrand",
   "File": "main.lua",
-  "Version": 1.55,
+  "Version": 1.56,
   "Type": "Champ",
   "Champions": ["Brand"]
 }

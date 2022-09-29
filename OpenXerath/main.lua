@@ -390,7 +390,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Xerath:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling))
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.path and not target.isDead)
 	end
 	
 	function Xerath:WillGetHitByW(target)
@@ -1147,7 +1147,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Combo")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetable and not target.isInvulnerable and not target.isDead
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
@@ -1216,7 +1216,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable and not target.isInvulnerable and not target.isDead
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
@@ -1328,6 +1328,7 @@ cb.add(cb.load, function()
 		local p = (self.XerathMenu.misc.w_center_logic:get() or (w2 and w2.hitChance >= 6)) and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.wData.range and p.hitChance >= hitChanceMode then
+			local test = self:MissileE(target)
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
 			self:DebugPrint("Casted W on " .. mode)
 			hasCasted = true

@@ -330,7 +330,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Brand:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling))
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.path and not target.isDead)
 	end
 	
 	function Brand:WillGetHitByW(target)
@@ -748,7 +748,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or self:invisibleValid(enemy, math.huge)) and enemy.isTargetable and not enemy.isInvulnerable and not enemy.isDead
+			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or self:invisibleValid(enemy, math.huge)) and enemy.isTargetable and not enemy.isInvulnerable
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -888,7 +888,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Combo")
 		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
