@@ -389,6 +389,10 @@ cb.add(cb.load, function()
 		return buffTime
 	end
 	
+	function Xerath:invisibleValid(target, distance)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling))
+	end
+	
 	function Xerath:WillGetHitByW(target)
 		if not target then return false end
 		for key,value in ipairs(particleWList) do
@@ -958,7 +962,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or (enemy.isValid and ((enemy.path and enemy.path.count > 1) or enemy.isRecalling))) and enemy.isTargetable and not enemy.isInvulnerable and not enemy.isDead
+			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or self:invisibleValid(enemy, math.huge)) and enemy.isTargetable and not enemy.isInvulnerable and not enemy.isDead
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -1143,7 +1147,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Combo")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable and not target.isInvulnerable and not target.isDead
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetable and not target.isInvulnerable and not target.isDead
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
@@ -1266,6 +1270,7 @@ cb.add(cb.load, function()
         if hasCasted then return 0 end
 		self.qData.delay = 0.55
 		self.qData.range = 750
+		self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*1.5)
 		local p = pred.getPrediction(target, self.qData)
 		if godBuffTime <= 0.45 + pingLatency and (noKillBuffTime <= 0.45 + pingLatency or QDamage < totalHP) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.qData.range and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) then
 			if not timeSinceUpdate or timeSinceUpdate < game.time - 0.15 then
@@ -1292,17 +1297,16 @@ cb.add(cb.load, function()
 			player:castSpell(SpellSlot.Q, game.cursorPos, true, false)
 			hasCasted = true
 		elseif godBuffTime <= 0.4 + pingLatency and (noKillBuffTime <= 0.4 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
-			local dashing = target.path and target.path.isDashing
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
 			self.qData.delay = 0.5
 			local chargeRange = self:GetChargeRange(1500, 750, 1.5)
 			self.qData.range = chargeRange
 			local CastTime = target.activeSpell and casting[target.handle] and game.time < casting[target.handle] and (casting[target.handle] - game.time) or 0
 			if self.qData.range < 1500 then
-				if stunTime <= 0 and CastTime <= 0 and not dashing and not channelingSpell and target.characterIntermediate.moveSpeed > 0 and target.path and target.path.count > 1 and not target.isRecalling then
+				if target.path and not target.path.isDashing and target.path.count > 1 then
 					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
 				end
-				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency)
+				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*1.5)
 			end
 			local canBeSlowed = canBeStunned and not target:getBuff("Highlander")
 			p = pred.getPrediction(target, self.qData)
@@ -1323,7 +1327,7 @@ cb.add(cb.load, function()
 		local w2 = pred.getPrediction(target, self.w2Data)
 		local p = (self.XerathMenu.misc.w_center_logic:get() or (w2 and w2.hitChance >= 6)) and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
-		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.wData.range and p.hitChance >= hitChanceMode then
+		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.wData.range and p.hitChance >= hitChanceMode then
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
 			self:DebugPrint("Casted W on " .. mode)
 			hasCasted = true

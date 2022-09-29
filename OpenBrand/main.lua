@@ -329,6 +329,10 @@ cb.add(cb.load, function()
 		return buffTime
 	end
 	
+	function Brand:invisibleValid(target, distance)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling))
+	end
+	
 	function Brand:WillGetHitByW(target)
 		if not target then return false end
 		for key,value in ipairs(particleWList) do
@@ -744,7 +748,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or (enemy.isValid and ((enemy.path and enemy.path.count > 1) or enemy.isRecalling))) and enemy.isTargetable and not enemy.isInvulnerable and not enemy.isDead
+			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or self:invisibleValid(enemy, math.huge)) and enemy.isTargetable and not enemy.isInvulnerable and not enemy.isDead
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -884,7 +888,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Combo")
 		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1100 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
@@ -1086,7 +1090,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1100 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
