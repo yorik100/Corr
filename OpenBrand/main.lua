@@ -330,7 +330,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Brand:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling) and not target.isDead and not target.isInvulnerable and target.isTargetable)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetable)
 	end
 	
 	function Brand:WillGetHitByW(target)
