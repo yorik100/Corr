@@ -330,7 +330,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Brand:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling) and not target.isDead)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling) and not target.isDead and not target.isInvulnerable and target.isTargetable)
 	end
 	
 	function Brand:WillGetHitByW(target)
@@ -748,7 +748,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or self:invisibleValid(enemy, math.huge)) and enemy.isTargetable and not enemy.isInvulnerable
+			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -1176,6 +1176,7 @@ cb.add(cb.load, function()
 	
     function Brand:CastQ(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, stunTime)
 		if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 			p = pred.getPrediction(target, self.qData)
 			local WTime = self:WillGetHitByW(target)
@@ -1195,6 +1196,7 @@ cb.add(cb.load, function()
     -- This function will cast W on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
     function Brand:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
 		if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		local p = pred.getPrediction(target, self.wData)
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.w_hitchance:get()] or 1)
 		if godBuffTime <= 0.7 + pingLatency and (noKillBuffTime <= 0.7 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.wData.range and p.hitChance >= hitChanceMode then
@@ -1207,6 +1209,7 @@ cb.add(cb.load, function()
 	
     function Brand:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime, realTarget)
 		if hasCasted then return end
+		if not totalHP then totalHP = 0 end
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/realTarget.maxHealth) < (ElderBuff and 0.2 or 0))) then
 			player:castSpell(SpellSlot.E, target, true, false)
 			hasCasted = true
@@ -1216,6 +1219,7 @@ cb.add(cb.load, function()
 
     function Brand:CastR(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, realTarget)
 		if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		p = pred.getPrediction(target.asAIBase, self.rData)
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageR)/realTarget.maxHealth) < (ElderBuff and 0.2 or 0))) and p and p.castPosition.isValid and p.hitChance >= 1 then
 			player:castSpell(SpellSlot.R, target, true, false)

@@ -390,7 +390,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Xerath:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling) and not target.isDead)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling) and not target.isDead and not target.isInvulnerable and target.isTargetable)
 	end
 	
 	function Xerath:WillGetHitByW(target)
@@ -962,7 +962,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and (enemy:isValidTarget(math.huge, true, player.pos) or stasisTime > 0 or self:invisibleValid(enemy, math.huge)) and enemy.isTargetable and not enemy.isInvulnerable and not enemy.isDead
+			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -973,7 +973,8 @@ cb.add(cb.load, function()
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347) or enemy.isRecalling
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
 			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
-			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
+			local prioCast = dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)
+			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
 			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (CastTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
@@ -1078,7 +1079,7 @@ cb.add(cb.load, function()
 			if needsUltCasted and (orb.predictHP(enemy, 0.5 + pingLatency) > 0 or stasisTime > 0) and godBuffTimeAuto <= 0.75 + pingLatency and (noKillBuffTimeAuto <= 0.75 + pingLatency or RDamage < totalHP) then
 				if not self:WillGetHitByR(enemy) or not ((((totalHP) - RDamage)/enemy.maxHealth) < (ElderBuff and 0.2 or 0)) then
 					if player:spellSlot(SpellSlot.R).state == 0 then
-						self:CastR(enemy, godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, RDamage, totalHP, CCTime)
+						self:CastR(enemy, godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, RDamage, totalHP, CCTime, prioCast)
 					end
 					RTarget = enemy
 					table.remove(debugList, #debugList)
@@ -1268,11 +1269,12 @@ cb.add(cb.load, function()
     -- This function will cast Q on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
     function Xerath:CastQ(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, stunTime)
         if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		self.qData.delay = 0.55
 		self.qData.range = 750
 		self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*2)
 		local p = pred.getPrediction(target, self.qData)
-		if godBuffTime <= 0.45 + pingLatency and (noKillBuffTime <= 0.45 + pingLatency or QDamage < totalHP) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.qData.range and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) then
+		if godBuffTime <= 0.45 + pingLatency and (noKillBuffTime <= 0.45 + pingLatency or (QDamage < totalHP)) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.qData.range and p.hitChance >= (target.characterIntermediate.moveSpeed > 0  and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) then
 			if not timeSinceUpdate or timeSinceUpdate < game.time - 0.15 then
 				player:castSpell(SpellSlot.Q, game.cursorPos, true, true)
 				instantQCast = {
@@ -1288,6 +1290,7 @@ cb.add(cb.load, function()
 	
     function Xerath:CastQ2(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, chargingQ, stunTime, canBeStunned)
 		if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		local buff = chargingQ
 		buff = buff and buff.valid or nil
 		self.qChargeData.from = player.pos:extend(target.pos, 750)
@@ -1310,7 +1313,7 @@ cb.add(cb.load, function()
 			end
 			local canBeSlowed = canBeStunned and not target:getBuff("Highlander")
 			p = pred.getPrediction(target, self.qData)
-			if (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= chargeRange and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) and (not self:WillGetHitByW(target) or stunTime > 0 or not canBeSlowed or godBuffTime > 0) then
+			if (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= chargeRange and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.q_hitchance:get()] or 1) and (not self:WillGetHitByW(target) or stunTime > 0 or not canBeSlowed or godBuffTime > 0) then
 				player:updateChargeableSpell(SpellSlot.Q, p.castPosition)
 				hasCasted = true
 				self:DebugPrint("Casted Q with range of " .. math.ceil(self.qData.range) .. " on " .. mode)
@@ -1323,6 +1326,7 @@ cb.add(cb.load, function()
     -- This function will cast W on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
     function Xerath:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
 		if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		local w1 = pred.getPrediction(target, self.wData)
 		local w2 = pred.getPrediction(target, self.w2Data)
 		local p = (self.XerathMenu.misc.w_center_logic:get() or (w2 and w2.hitChance >= 6)) and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
@@ -1338,10 +1342,11 @@ cb.add(cb.load, function()
 	
     function Xerath:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime)
 		if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		local p = pred.getPrediction(target, self.eData)
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		-- Cast E with pred
-		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.eData.range and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
+		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.eData.range and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
 			player:castSpell(SpellSlot.E, p.castPosition, true, false)
 			hasCasted = true
 			self:DebugPrint("Casted E on " .. mode)
@@ -1349,11 +1354,12 @@ cb.add(cb.load, function()
 		return p and p.hitChance or 0
 	end
 
-    function Xerath:CastR(target, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime)
+    function Xerath:CastR(target, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, prioCast)
 		if hasCasted then return 0 end
+		if not totalHP then totalHP = 0 end
 		local p = pred.getPrediction(target, self.rData)
 		-- Cast R with pred
-		if godBuffTime <= 0.5 + pingLatency and (noKillBuffTime <= 0.5 + pingLatency or not ((((totalHP) - GetDamageR)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or stunTime > 0) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.rData.range and p.hitChance >= (target.characterIntermediate.moveSpeed > 0 and HitchanceMenu[self.XerathMenu.prediction.r_hitchance:get()] or 1) then
+		if godBuffTime <= 0.5 + pingLatency and (noKillBuffTime <= 0.5 + pingLatency or not ((((totalHP) - GetDamageR)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.rData.range and p.hitChance >= ((target.characterIntermediate.moveSpeed > 0 and not prioCast) and HitchanceMenu[self.XerathMenu.prediction.r_hitchance:get()] or 1) then
 			player:castSpell(SpellSlot.R, p.castPosition, true, false)
 			hasCasted = true
 			self:DebugPrint("Casted R")
