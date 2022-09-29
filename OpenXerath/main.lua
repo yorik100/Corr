@@ -390,7 +390,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Xerath:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.path and not target.isDead)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and ((target.path and target.path.count > 1) or target.isRecalling) and not target.isDead)
 	end
 	
 	function Xerath:WillGetHitByW(target)
@@ -970,7 +970,7 @@ cb.add(cb.load, function()
 			table.insert(debugList, "AutoCalcs")
 			local dashing = enemy.path and enemy.path.isDashing
 			local CCTime = pred.getCrowdControlledTime(enemy)
-			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347)
+			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347) or enemy.isRecalling
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
 			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
 			local manualR = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency) < 1.5)) and enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency + 0.2) < 0.6
