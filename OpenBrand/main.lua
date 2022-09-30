@@ -862,6 +862,9 @@ cb.add(cb.load, function()
 						particleOwner = {
 						isEnemy = true,
 						boundingRadius = 55,
+							characterIntermediate = {
+								moveSpeed = 325
+							},
 						homeless = true
 						}
 						print("Homeless particle : " .. value.obj.name)
@@ -873,11 +876,13 @@ cb.add(cb.load, function()
 				if player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
-				if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not pred.findSpellCollisions(particleOwner, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1] then
+				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - value.particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
+				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - value.particleTime) + pingLatency) > self.wData.radius
+				if QParticle and not QCanDodge and (particleTime - pingLatency + 0.2) <= QLandingTime and not pred.findSpellCollisions(particleOwner, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1] then
 					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")
-				elseif WParticle and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.15) <= 0.875 then
+				elseif WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.15) <= 0.875 then
 					player:castSpell(SpellSlot.W, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted W on particle")
