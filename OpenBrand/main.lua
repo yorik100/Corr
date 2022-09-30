@@ -525,6 +525,11 @@ cb.add(cb.load, function()
 			castPos = object.pos
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos})
 			self:DebugPrint("Added cast particle " .. object.name)
+		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object then
+            owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
+            target = object.asEffectEmitter.targetAttachment.object
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, zedR = true})
+			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)
 		-- print(object.name)
@@ -549,7 +554,7 @@ cb.add(cb.load, function()
 			particleGwenList[owner2.handle] = nil
 			self:DebugPrint("Removed particle Gwen")
 			::endMist::
-		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") then
+		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") or string.find(object.name, "_W_tar") then
 			for key,value in ipairs(particleCastList) do
 				if value.obj.handle == object.handle then
 					table.remove(particleCastList, key)
@@ -850,27 +855,32 @@ cb.add(cb.load, function()
 		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
 			for key,value in ipairs(particleCastList) do
 				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase) and value.obj.asEffectEmitter.targetAttachment.object or nil)
-				if not particleOwner then
-					particleOwner = {
-					isEnemy = true,
-					boundingRadius = 55,
-					homeless = true
-					}
-				print("Homeless particle : " .. value.obj.name)
+				if not particleOwner or not particleOwner.isHero then
+					if particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner then
+						particleOwner = particleOwner.asAttackableUnit.owner
+					else
+						particleOwner = {
+						isEnemy = true,
+						boundingRadius = 55,
+						homeless = true
+						}
+						print("Homeless particle : " .. value.obj.name)
+					end
+				end
+				if value.zedR then
+					value.castingPos = value.target.pos + (value.owner.direction * value.target.boundingRadius)
 				end
 				if player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
-				for key,value in ipairs(particleCastList) do
-					if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not pred.findSpellCollisions(particleOwner, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1] then
-						player:castSpell(SpellSlot.Q, value.castingPos, true, false)
-						hasCasted = true
-						self:DebugPrint("Casted Q on particle")
-					elseif WParticle and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.15) <= 0.875 then
-						player:castSpell(SpellSlot.W, value.castingPos, true, false)
-						hasCasted = true
-						self:DebugPrint("Casted W on particle")
-					end
+				if QParticle and (particleTime - pingLatency + 0.2) <= QLandingTime and not pred.findSpellCollisions(particleOwner, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1] then
+					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
+					hasCasted = true
+					self:DebugPrint("Casted Q on particle")
+				elseif WParticle and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.15) <= 0.875 then
+					player:castSpell(SpellSlot.W, value.castingPos, true, false)
+					hasCasted = true
+					self:DebugPrint("Casted W on particle")
 				end
 				::nextParticle::
 			end
