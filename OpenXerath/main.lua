@@ -150,6 +150,27 @@ cb.add(cb.load, function()
             rangeType = 1,
             boundingRadiusMod = true
         }
+        self.eCollideData = {
+            delay = 0,
+            speed = 1400,
+            range = 1125,
+			radius = 60,
+			collision = { -- if not defined -> no collision calcs
+				hero = SpellCollisionType.Hard, 
+				-- Hard = Collides with object and stops on collision
+				minion = SpellCollisionType.Hard, 
+				-- Soft = Collides with object and passes through them.
+				tower = SpellCollisionType.None, 
+				-- None = Doesn't collide with object. Also default if not defined
+				extraRadius = 10, 
+				-- if not defined -> default = 0		
+				-- if not defined -> default = CollisionFlags.None
+				flags = bit.bor(CollisionFlags.Windwall, CollisionFlags.Samira, CollisionFlags.Braum)
+			},
+            type = spellType.linear,
+            rangeType = 1,
+            boundingRadiusMod = true
+        }
 		self.qData = {
             delay = 0.5,
             speed = math.huge,
@@ -427,7 +448,9 @@ cb.add(cb.load, function()
 			local startPos = value.obj.startPosition:extend(value.obj.endPosition, traveledDistance)
 			local speed = value.obj.missileSpeed
 			local timeToReach = startPos:distance2D(endPos)/speed
-			local collisionTarget = pred.findSpellCollisions(nil, self.eData, startPos, endPos, timeToReach)[1]
+			self.eCollideData.delay = -game.latency/1000
+			local collisionTable = pred.findSpellCollisions(nil, self.eCollideData, startPos, endPos, timeToReach)
+			local collisionTarget = collisionTable[1]
 			if collisionTarget and collisionTarget.handle == target.handle then
 				return true
 			end
@@ -1125,7 +1148,7 @@ cb.add(cb.load, function()
 				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.qData.delay - value.particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - value.particleTime) + pingLatency) > self.wData.radius
-				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - value.particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
+				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - value.particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius	
 				if QParticle then goto qBuffHandling end
 				if EParticle and not ECanDodge and player.pos:distance2D(value.castingPos) <= self.eData.range and (particleTime - pingLatency) <= ELandingTime and not pred.findSpellCollisions(particleOwner, self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1] then
 					player:castSpell(SpellSlot.E, value.castingPos, true, false)
