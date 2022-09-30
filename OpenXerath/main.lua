@@ -973,7 +973,7 @@ cb.add(cb.load, function()
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347) or enemy.isRecalling
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
 			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
-			local prioCast = dashing or CastTime > 0 or (stasisTime > 0 and  (stasisTime - pingLatency + 0.2) < 0.6)
+			local prioCast = dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.6)
 			local manualR = enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency) < 1.5
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
