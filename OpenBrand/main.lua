@@ -86,6 +86,7 @@ cb.add(cb.load, function()
 	local hasCasted = false
 	local allyREkkoCast = nil
 	local allyREveCast = nil
+	local teleportOwner = nil
 
     -- Creating a debug print function, so the developer can easily check the output and if someone
     -- wants to play with the simple script can disable the debug prints in the console
@@ -527,6 +528,27 @@ cb.add(cb.load, function()
             target = object.asEffectEmitter.targetAttachment.object
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
 			self:DebugPrint("Added cast particle " .. object.name)
+		elseif object.name == "global_ss_teleport_red.troy" and object.isEffectEmitter then
+            teleportOwner = object.asEffectEmitter.attachment.object
+		elseif object.name == "global_ss_teleport_turret_red.troy" and object.isEffectEmitter then
+            target = object.asEffectEmitter.attachment.object
+			local nexusPos = nil
+			for key, value in pairs(objManager.buildings.enemies.list) do
+				if value.isNexus then
+					nexusPos = value.pos
+					break
+				end
+			end
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
+		elseif object.name == "global_ss_teleport_target_red.troy" and object.isEffectEmitter then
+            target = object.asEffectEmitter.targetAttachment.object
+			for key, value in pairs(objManager.buildings.enemies.list) do
+				if value.isNexus then
+					nexusPos = value.pos
+					break
+				end
+			end
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
 		end
 		table.remove(debugList, #debugList)
 		-- print(object.name)
@@ -551,7 +573,7 @@ cb.add(cb.load, function()
 			particleGwenList[owner2.handle] = nil
 			self:DebugPrint("Removed particle Gwen")
 			::endMist::
-		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") or string.find(object.name, "_W_tar") then
+		elseif string.find(object.name, "_R_Gatemarker") or string.find(object.name, "_R_ChargeIndicator") or (string.find(object.name, "_R_Update_Indicator") and not string.find(object.name, "PreJump")) or string.find(object.name, "R_Tar_Ground") or string.find(object.name, "R_Landing") or string.find(object.name, "W_ImpactWarning") or string.find(object.name, "_W_tar") or object.name == "global_ss_teleport_target_red.troy" or object.name == "global_ss_teleport_target_red.troy" then
 			for key,value in ipairs(particleCastList) do
 				if value.obj.handle == object.handle then
 					table.remove(particleCastList, key)
@@ -850,29 +872,37 @@ cb.add(cb.load, function()
 		local WParticle = (self.BrandMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
 		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
 			for key,value in ipairs(particleCastList) do
-				if (value.team and value.team == player.team) or value.isAlly then goto nextParticle end
-				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
-				if not particleOwner or not particleOwner.isHero or particleOwner.isAlly then
-					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
-						particleOwner = particleOwner.asAttackableUnit.owner.asAIBase
-					elseif particleOwner and particleOwner.isMissile and particleOwner.asMissile.caster and particleOwner.asMissile.caster.isHero and particleOwner.asAttackableUnit.asMissile.caster.isEnemy then
-						particleOwner = particleOwner.asMissile.caster.asAIBase
-					else
-						particleOwner = {
-						isEnemy = true,
-						boundingRadius = value.bounding,
-						characterIntermediate = {
-							moveSpeed = value.speed
-						},
-						homeless = true
-						}
-						print("Homeless particle : " .. value.obj.name)
+				if not value or (value.time + value.castTime) <= game.time or (value.team and value.team == player.team) or value.isAlly then table.remove(particleCastList, key) goto nextParticle end
+				if not value.particleOwner then
+					local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
+					if value.teleport then
+						particleOwner = value.owner
+						value.castingPos = value.target.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
 					end
+					if not particleOwner or not particleOwner.isHero or particleOwner.isAlly then
+						if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
+							particleOwner = particleOwner.asAttackableUnit.owner.asAIBase
+						elseif particleOwner and particleOwner.isMissile and particleOwner.asMissile.caster and particleOwner.asMissile.caster.isHero and particleOwner.asAttackableUnit.asMissile.caster.isEnemy then
+							particleOwner = particleOwner.asMissile.caster.asAIBase
+						else
+							particleOwner = {
+							isEnemy = true,
+							boundingRadius = value.bounding,
+							characterIntermediate = {
+								moveSpeed = value.speed
+							},
+							homeless = true
+							}
+							print("Homeless particle : " .. value.obj.name)
+						end
+					end
+					if particleOwner and particleOwner.isHero then
+						particleOwner = particleOwner.asAIBase
+						print("Owner found : " .. particleOwner.name)
+					end
+					value.particleOwner = particleOwner
 				end
-				if particleOwner and particleOwner.isHero then
-					particleOwner = particleOwner.asAIBase
-					print("Owner found : " .. particleOwner.name)
-				end
+				particleOwner = value.particleOwner
 				if value.zedR then
 					value.castingPos = value.target.pos + (value.owner.direction * value.target.boundingRadius)
 				end
@@ -883,11 +913,11 @@ cb.add(cb.load, function()
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				local canQ = QParticle and not QCanDodge and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
-				if canQ and not canW and (particleTime - pingLatency + 0.2) <= QLandingTime then
+				if canQ and not canW and (particleTime - pingLatency + 0.15) <= QLandingTime then
 					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")
-				elseif canW and (particleTime - pingLatency + 0.15) <= 0.875 then
+				elseif canW and (particleTime - pingLatency + 0.1) <= 0.875 then
 					player:castSpell(SpellSlot.W, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted W on particle")
