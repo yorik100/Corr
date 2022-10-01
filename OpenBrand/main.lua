@@ -913,11 +913,11 @@ cb.add(cb.load, function()
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				local canQ = QParticle and not QCanDodge and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
-				if canQ and not canW and (particleTime - pingLatency + 0.15) <= QLandingTime then
+				if canQ and not canW and (particleTime - pingLatency + 0.2) <= QLandingTime then
 					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")
-				elseif canW and (particleTime - pingLatency + 0.1) <= 0.875 then
+				elseif canW and (particleTime - pingLatency + 0.15) <= 0.875 then
 					player:castSpell(SpellSlot.W, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted W on particle")
