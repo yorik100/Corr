@@ -996,12 +996,12 @@ cb.add(cb.load, function()
 			local CCTime = pred.getCrowdControlledTime(enemy)
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347) or enemy.isRecalling
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
-			local CastTime = enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle] and (casting[enemy.handle] - game.time) or 0
-			local prioCast = dashing or CastTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.6)
+			local castTime = (enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle]) and (casting[enemy.handle] - game.time) or 0
+			local prioCast = dashing or castTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.6)
 			local manualR = enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency) < 1.5
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
-			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (CastTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
+			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (castTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
 			
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
@@ -1033,7 +1033,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoECasting")
-			if CastingE and CastTime > 0 and (CastTime - pingLatency - 0.3) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+			if CastingE and castTime > 0 and (castTime - pingLatency - 0.3) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
 				self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
@@ -1058,7 +1058,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWCasting")
-			if CastingW and CastTime > 0 and (CastTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
+			if CastingW and castTime > 0 and (castTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
 				self:CastW(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
@@ -1073,7 +1073,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQCasting")
-			if CastingQ and CastTime > 0 and godBuffTimeAuto <= 0.4 + pingLatency and (noKillBuffTimeAuto <= 0.4 + pingLatency or QDamage < totalHP) then
+			if CastingQ and castTime > 0 and godBuffTimeAuto <= 0.4 + pingLatency and (noKillBuffTimeAuto <= 0.4 + pingLatency or QDamage < totalHP) then
 				self:CastQ2(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, qBuff, CCTime, canBeStunned)
 			end
 			table.remove(debugList, #debugList)
@@ -1132,7 +1132,7 @@ cb.add(cb.load, function()
 						isEnemy = true,
 						boundingRadius = 55,
 							characterIntermediate = {
-								moveSpeed = 325
+								moveSpeed = 350
 							},
 						homeless = true
 						}
@@ -1343,7 +1343,6 @@ cb.add(cb.load, function()
 			self.qData.delay = 0.5
 			local chargeRange = self:GetChargeRange(1500, 750, 1.5)
 			self.qData.range = chargeRange
-			local CastTime = target.activeSpell and casting[target.handle] and game.time < casting[target.handle] and (casting[target.handle] - game.time) or 0
 			if self.qData.range < 1500 then
 				if target.path and not target.path.isDashing and target.path.count > 1 then
 					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
