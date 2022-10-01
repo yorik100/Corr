@@ -892,7 +892,6 @@ cb.add(cb.load, function()
 					self:DebugPrint("Casted W on particle")
 				end
 				::nextParticle::
-			end
 		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
