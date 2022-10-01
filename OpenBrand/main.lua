@@ -84,7 +84,8 @@ cb.add(cb.load, function()
 	local particleCastList = {}
 	local ElderBuff = nil
 	local hasCasted = false
-	local isSylasRCast = nil
+	local allyREkkoCast = nil
+	local allyREveCast = nil
 
     -- Creating a debug print function, so the developer can easily check the output and if someone
     -- wants to play with the simple script can disable the debug prints in the console
@@ -505,7 +506,7 @@ cb.add(cb.load, function()
 		elseif string.find(object.name, "Twisted") and string.find(object.name, "_R_Gatemarker_Red") and object.isEffectEmitter then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos, bounding = 65, speed = 330})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "Ekko_") and string.find(object.name, "_R_ChargeIndicator") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
+		elseif string.find(object.name, "Ekko_") and string.find(object.name, "_R_ChargeIndicator") and object.isEffectEmitter and (not allyREkkoCast or allyREkkoCast <= game.time - 0.35) then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos, bounding = 65, speed = 340})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Pantheon_") and string.find(object.name, "_R_Update_Indicator_Enemy") and not string.find(object.name, "PreJump") and object.isEffectEmitter then
@@ -515,7 +516,7 @@ cb.add(cb.load, function()
 		elseif string.find(object.name, "Galio_") and string.find(object.name, "_R_Tar_Ground_Enemy") and object.isEffectEmitter then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.75, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "Evelynn_") and string.find(object.name, "_R_Landing") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
+		elseif string.find(object.name, "Evelynn_") and string.find(object.name, "_R_Landing") and object.isEffectEmitter and (not allyREveCast or allyREveCast <= game.time - 0.15) then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos, bounding = 65, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Tahm")  and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
@@ -848,12 +849,13 @@ cb.add(cb.load, function()
 		local QParticle = (self.BrandMenu.misc.q_particle:get() and player:spellSlot(SpellSlot.Q).state == 0)
 		local WParticle = (self.BrandMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
 		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
+				if (value.team and value.team == player.team) or not value.isEnemy then goto nextParticle end
 				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 				if not particleOwner or not particleOwner.isHero then
 					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
-						particleOwner = particleOwner.asAttackableUnit.owner
+						particleOwner = particleOwner.asAttackableUnit.owner.asAIBase
 					elseif particleOwner and particleOwner.isMissile and particleOwner.asMissile.caster and particleOwner.asMissile.caster.isHero and particleOwner.asAttackableUnit.asMissile.caster.isEnemy then
-						particleOwner = particleOwner.asMissile.caster
+						particleOwner = particleOwner.asMissile.caster.asAIBase
 					else
 						particleOwner = {
 						isEnemy = true,
@@ -868,6 +870,7 @@ cb.add(cb.load, function()
 				end
 				if particleOwner and particleOwner.isHero then
 					particleOwner = particleOwner.asAIBase
+					print("Owner found : " .. particleOwner.name)
 				end
 				if value.zedR then
 					value.castingPos = value.target.pos + (value.owner.direction * value.target.boundingRadius)
@@ -1321,8 +1324,11 @@ cb.add(cb.load, function()
         end
 		if not source or not source.isHero then return end
 		table.insert(debugList, "Exceptions")
-		if (spell.name == "EvelynnR" or spell.name == "EkkoR") and source.isAlly then
-			isSylasRCast = game.time
+		if spell.name == "EvelynnR" and source.isAlly then
+			allyREveCast = game.time
+		end
+		if spell.name == "EkkoR" and source.isAlly then
+			allyREkkoCast = game.time
 		end
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "SpellCast")
