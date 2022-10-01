@@ -848,22 +848,26 @@ cb.add(cb.load, function()
 		local QParticle = (self.BrandMenu.misc.q_particle:get() and player:spellSlot(SpellSlot.Q).state == 0)
 		local WParticle = (self.BrandMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
 		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
-			for key,value in ipairs(particleCastList) do
 				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 				if not particleOwner or not particleOwner.isHero then
 					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
 						particleOwner = particleOwner.asAttackableUnit.owner
+					elseif particleOwner and particleOwner.isMissile and particleOwner.asMissile.caster and particleOwner.asMissile.caster.isHero and particleOwner.asAttackableUnit.asMissile.caster.isEnemy then
+						particleOwner = particleOwner.asMissile.caster
 					else
 						particleOwner = {
 						isEnemy = true,
 						boundingRadius = value.bounding,
-							characterIntermediate = {
-								moveSpeed = value.speed
-							},
+						characterIntermediate = {
+							moveSpeed = value.speed
+						},
 						homeless = true
 						}
 						print("Homeless particle : " .. value.obj.name)
 					end
+				end
+				if particleOwner and particleOwner.isHero then
+					particleOwner = particleOwner.asAIBase
 				end
 				if value.zedR then
 					value.castingPos = value.target.pos + (value.owner.direction * value.target.boundingRadius)

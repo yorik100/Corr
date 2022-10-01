@@ -1127,6 +1127,8 @@ cb.add(cb.load, function()
 				if not particleOwner or not particleOwner.isHero then
 					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
 						particleOwner = particleOwner.asAttackableUnit.owner
+					elseif particleOwner and particleOwner.isMissile and particleOwner.asMissile.caster and particleOwner.asMissile.caster.isHero and particleOwner.asAttackableUnit.asMissile.caster.isEnemy then
+						particleOwner = particleOwner.asMissile.caster
 					else
 						particleOwner = {
 						isEnemy = true,
@@ -1138,6 +1140,9 @@ cb.add(cb.load, function()
 						}
 						print("Homeless particle : " .. value.obj.name)
 					end
+				end
+				if particleOwner and particleOwner.isHero then
+					particleOwner = particleOwner.asAIBase
 				end
 				if value.zedR then
 					value.castingPos = value.target.pos + (value.owner.direction * value.target.boundingRadius)
