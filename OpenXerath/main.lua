@@ -1152,7 +1152,7 @@ cb.add(cb.load, function()
 		if (EParticle or WParticle or QParticle) and particleCastList[1] and not hasCasted then
 			for key,value in ipairs(particleCastList) do
 				if not value or (value.time + value.castTime) <= game.time or (value.team and value.team == player.team) or value.isAlly then table.remove(particleCastList, key) goto nextParticle end
-				if not value.particleOwner then
+				if not value.owner then
 					local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 					if value.teleport then
 						particleOwner = value.owner
@@ -1179,11 +1179,11 @@ cb.add(cb.load, function()
 						particleOwner = particleOwner.asAIBase
 						print("Owner found : " .. particleOwner.name)
 					end
-					value.particleOwner = particleOwner
+					value.owner = particleOwner
 				end
-				particleOwner = value.particleOwner
+				particleOwner = value.owner
 				if value.zedR then
-					value.castingPos = value.target.pos + (value.owner.direction * value.target.boundingRadius)
+					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
 				end
 				if not value.castingPos or player.pos:distance2D(value.castingPos) > 1500 or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
