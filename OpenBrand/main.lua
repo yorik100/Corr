@@ -852,7 +852,7 @@ cb.add(cb.load, function()
 			for key,value in ipairs(particleCastList) do
 				if (value.team and value.team == player.team) or value.isAlly then goto nextParticle end
 				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
-				if not particleOwner or not particleOwner.isHero then
+				if not particleOwner or not particleOwner.isHero or particleOwner.isAlly then
 					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
 						particleOwner = particleOwner.asAttackableUnit.owner.asAIBase
 					elseif particleOwner and particleOwner.isMissile and particleOwner.asMissile.caster and particleOwner.asMissile.caster.isHero and particleOwner.asAttackableUnit.asMissile.caster.isEnemy then
@@ -1332,6 +1332,7 @@ cb.add(cb.load, function()
 			allyREkkoCast = game.time
 		end
 		table.remove(debugList, #debugList)
+		if spell.name == "EkkoR" or spell.name == "EvelynnR" then return end
 		table.insert(debugList, "SpellCast")
 		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
 		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay
