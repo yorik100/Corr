@@ -874,13 +874,13 @@ cb.add(cb.load, function()
 			elseif not self.XerathMenu.misc.shield_logic:get() or (target.allShield + target.magicalShield) <= 0 or not target.isVisible then
 				table.insert(targetList, target)
 			else
-				local QDamage = self:GetDamageQ(target, 999)
-				local WDamage = self:GetDamageW2Alternative(target, 999)
-				local EDamage = self:GetDamageEAlternative(target, 999)
-				local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
 				local accountQ = player:spellSlot(SpellSlot.Q).state == 0 or (player.activeSpell and player.activeSpell.hash == 2320506602 and casting[player.handle] and game.time < casting[player.handle])
 				local accountW = player:spellSlot(SpellSlot.W).state == 0 or self:WillGetHitByW(target)
 				local accountE = player:spellSlot(SpellSlot.E).state == 0 or self:MissileE(target)
+				local QDamage = self:GetDamageQ(target, 999)
+				local WDamage = accountQ and self:GetDamageW2Alternative(target, 999) or self:GetDamageW2(target, 999)
+				local EDamage = (accountQ or accountW) and self:GetDamageEAlternative(target, 999) or self:GetDamageE(target, 999)
+				local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
 				local accountR = rBuff
 				local potentialDamage = (accountQ and QDamage or 0) + (accountW and WDamage or 0) + (accountE and EDamage or 0) + (accountR and RDamage or 0)
 				if (target.allShield + target.magicalShield)*2 <= potentialDamage then
