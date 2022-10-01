@@ -81,20 +81,15 @@ cb.add(cb.load, function()
 	local particleRList = {}
 	local particleEList = {}
 	local particleGwenList = {}
+	local targetList = {}
 	local particleFlag = false
 	local disappearedE = 0
 	local disappearedRTime = 0
-	local disappearedRObject = {
-		obj = nil,
-		time = nil
-	}
+	local disappearedRObject = {}
 	local oldValue = nil
 	local oldXValue = nil
 	local oldYValue = nil
-	local instantQCast = {
-		pos = nil,
-		time = nil
-	}
+	local instantQCast = {}
 	local isUlting = nil
 	local QTarget = nil
 	local RTarget = nil
@@ -324,6 +319,7 @@ cb.add(cb.load, function()
 		mm.misc:slider('near_mouse_r', 'R2 near mouse range', 750, 0, 1500, 10)
 		mm.misc:keybind('manual_e', 'Manual E', 0x4A, false, false)
 		mm.misc:boolean('w_before_e', 'Use W before firing manual E', false)
+		mm.misc:boolean('shield_logic', 'Avoid targeting shielded players', true)
 		mm:header('prediction', 'Hitchance')
 		mm.prediction:list('q_hitchance', 'Q Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 2)
 		mm.prediction:list('w_hitchance', 'W Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 3)
@@ -413,7 +409,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Xerath:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetable)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags)
 	end
 	
 	function Xerath:WillGetHitByW(target)
@@ -611,9 +607,19 @@ cb.add(cb.load, function()
         if spell.level == 0 then return 0 end
         local time = time or 0
         if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 41.675 + 58.345 * spell.level + player.totalAbilityPower*1.0002
+        local damage = (25 + 35 * spell.level + player.totalAbilityPower*0.6)*1.667
 		local damageLibDamage = damageLib.magical(player, target, damage)
         return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
+    end
+	
+    function Xerath:GetDamageW2Alternative(target, time)
+        local spell = player:spellSlot(SpellSlot.W)
+        if spell.level == 0 then return 0 end
+        local time = time or 0
+        if spell.state ~= 0 and spell.cooldown > time then return 0 end
+        local damage = (25 + 35 * spell.level + player.totalAbilityPower*0.6)*1.667
+		local damageLibDamage = damageLib.magical(player, target, damage)
+        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, false)
     end
 
     function Xerath:GetDamageE(target, time)
@@ -624,6 +630,16 @@ cb.add(cb.load, function()
         local damage = 50 + 30 * spell.level + player.totalAbilityPower*0.45
 		local damageLibDamage = damageLib.magical(player, target, damage)
         return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
+    end
+	
+    function Xerath:GetDamageEAlternative(target, time)
+        local spell = player:spellSlot(SpellSlot.E)
+        if spell.level == 0 then return 0 end
+        local time = time or 0
+        if spell.state ~= 0 and spell.cooldown > time then return 0 end
+        local damage = 50 + 30 * spell.level + player.totalAbilityPower*0.45
+		local damageLibDamage = damageLib.magical(player, target, damage)
+        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, false)
     end
 	
     function Xerath:GetDamageR(target, time, shots, predictedHealth, firstShot)
@@ -814,9 +830,9 @@ cb.add(cb.load, function()
 	function Xerath:OnTick()
 		self:debugFlush()
 		table.insert(debugList, "Tick")
-		local targetTest = player
 		hasCasted = false
 		self:DrawCalcs()
+		self:TargetSelector()
 		QTarget = nil
 		RTarget = nil
         if player.isDead then table.remove(debugList, #debugList) return end
@@ -847,6 +863,38 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
     end
 	
+	function Xerath:TargetSelector()
+		table.insert(debugList, "TargetSelector")
+		local lowPrio = {}
+		targetList = {}
+		for key, target in pairs(ts.getTargets()) do
+			local stasisTime = self:getStasisTime(target)
+			if stasisTime > 0 then
+				table.insert(targetList, 1, target)
+			elseif not self.XerathMenu.misc.shield_logic:get() or (target.allShield + target.magicalShield) <= 0 or not target.isVisible then
+				table.insert(targetList, target)
+			else
+				local QDamage = self:GetDamageQ(target, 999)
+				local WDamage = self:GetDamageW2Alternative(target, 999)
+				local EDamage = self:GetDamageEAlternative(target, 999)
+				local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
+				local accountQ = player:spellSlot(SpellSlot.Q).state == 0 or (player.activeSpell and player.activeSpell.hash == 2320506602 and casting[player.handle] and game.time < casting[player.handle])
+				local accountW = player:spellSlot(SpellSlot.W).state == 0 or self:WillGetHitByW(target)
+				local accountE = player:spellSlot(SpellSlot.E).state == 0 or self:MissileE(target)
+				local accountR = rBuff
+				local potentialDamage = (accountQ and QDamage or 0) + (accountW and WDamage or 0) + (accountE and EDamage or 0) + (accountR and RDamage or 0)
+				if (target.allShield + target.magicalShield)*2 <= potentialDamage then
+					table.insert(targetList, target)
+				else
+					table.insert(lowPrio, target)
+				end
+			end
+		end
+		for key, target in pairs(lowPrio) do
+			table.insert(targetList, target)
+		end
+		table.remove(debugList, #debugList)
+	end
 	
 	function Xerath:DrawCalcs()
 	table.insert(debugList, "DrawCalcs")
@@ -1012,9 +1060,9 @@ cb.add(cb.load, function()
 		local pingLatency = game.latency/1000
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
-        for index, enemy in pairs(ts.getTargets()) do
+        for index, enemy in pairs(targetList) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
+			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -1229,8 +1277,8 @@ cb.add(cb.load, function()
         if orb.isComboActive == false then return end
 		
 		table.insert(debugList, "Combo")
-		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetable and not target.isInvulnerable
+		for index, target in pairs(targetList) do
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetableToTeamFlags and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
@@ -1298,8 +1346,8 @@ cb.add(cb.load, function()
         if orb.harassKeyDown == false then return end
 		
 		table.insert(debugList, "Harass")
-		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetable and not target.isInvulnerable
+		for index, target in pairs(targetList) do
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetableToTeamFlags and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
@@ -1571,7 +1619,7 @@ cb.add(cb.load, function()
 			allyREkkoCast = game.time
 		end
 		table.remove(debugList, #debugList)
-		if spell.name == "EkkoR" or spell.name == "EvelynnR" then return end
+		if spell.name == "EkkoR" or spell.name == "EvelynnR" or spell.name == "FizzE" then return end
 		table.insert(debugList, "SpellCast")
 		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
 		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay

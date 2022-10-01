@@ -332,7 +332,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Brand:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetable)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags)
 	end
 	
 	function Brand:WillGetHitByW(target)
@@ -464,7 +464,13 @@ cb.add(cb.load, function()
     end
 	
     function Brand:GetDamageW2(target, time)
-		return Brand:GetDamageW(target, time)*1.25
+        local spell = player:spellSlot(SpellSlot.W)
+        if spell.level == 0 then return 0 end
+        local time = time or 0
+        if spell.state ~= 0 and spell.cooldown > time then return 0 end
+        local damage = (30 + 45 * spell.level + player.totalAbilityPower*0.60)*1.25
+		local damageLibDamage = damageLib.magical(player, target, damage)
+        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true, false, 1)
     end
 
     function Brand:GetDamageE(target, time)
@@ -649,7 +655,6 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
     end
 	
-	
 	function Brand:DrawCalcs()
 	table.insert(debugList, "DrawCalcs")
 	ElderBuff = myHero:getBuff("ElderDragonBuff")
@@ -727,10 +732,10 @@ cb.add(cb.load, function()
 			if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
 				for _, minion in pairs(objManager.aiBases.list) do
 					table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(660, true, player.pos) and minion.isTargetable
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags
 					if not validTarget then goto continue1 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and minion.handle ~= target.handle
 						if not validTarget then goto continue2 end
 						local BrandABlaze = minion.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
@@ -772,7 +777,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
+			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -938,7 +943,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Combo")
 		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetable and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetableToTeamFlags and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
@@ -962,7 +967,7 @@ cb.add(cb.load, function()
 				if player and player.pos:distance2D(target.pos) <= 600 and player.pos:distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then rCanBounce = true end
 				if not rCanBounce then
 					for _, minion in pairs(objManager.aiBases.list) do
-						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos) and minion.isTargetable
+						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos) and minion.isTargetableToTeamFlags
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local minionAI = minion.asAIBase
 						if not validTarget or (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(enemyPos) > 600 then goto continue2 end          
@@ -973,7 +978,7 @@ cb.add(cb.load, function()
 				end
 				if self.BrandMenu.combo.r_aoe:get() > 0 then
 					for index2, target2 in pairs(ts.getTargets()) do
-						local validTarget =  target2 and target2:isValidTarget(600, true, target.pos) and target2.isTargetable
+						local validTarget =  target2 and target2:isValidTarget(600, true, target.pos) and target2.isTargetableToTeamFlags
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local bounceEnemyPos = target2.path and pred.positionAfterTime(target2, 0.6 + game.latency/1000) or target2.pos
 						if not validTarget or bounceEnemyPos:distance2D(enemyPos) > 600 then goto continue3 end
@@ -1049,10 +1054,10 @@ cb.add(cb.load, function()
 			local chosenMinion = nil
 			local distanceChamp = nil
 				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetable
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and minion.handle ~= target.handle
 						if not validTarget then goto continue5 end
 						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
@@ -1083,10 +1088,10 @@ cb.add(cb.load, function()
 			local rTotalDamage = nil
 			local distanceChamp = nil
 			for _, minion in pairs(objManager.aiBases.list) do
-				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(600, true, player.pos) and minion.isTargetable and not target.isInvulnerable
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(600, true, player.pos) and minion.isTargetableToTeamFlags and not target.isInvulnerable
 				if not validTarget then goto continue6 end
 				for index, target in pairs(ts.getTargets()) do
-					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
+					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and minion.handle ~= target.handle
 					if not validTarget then goto continue7 end
 					minionAI = minion.asAIBase
 					if (minionAI.path and pred.positionAfterTime(minionAI, 0.6 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos) <= 600 then
@@ -1140,7 +1145,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetable and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetableToTeamFlags and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
@@ -1193,10 +1198,10 @@ cb.add(cb.load, function()
 			local chosenMinion = nil
 			local distanceChamp = nil
 				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetable
+					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags
 					if not validTarget then goto continue4 end
 					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetable and minion.handle ~= target.handle
+						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and minion.handle ~= target.handle
 						if not validTarget then goto continue5 end
 						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
 						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
@@ -1362,7 +1367,7 @@ cb.add(cb.load, function()
 			allyREkkoCast = game.time
 		end
 		table.remove(debugList, #debugList)
-		if spell.name == "EkkoR" or spell.name == "EvelynnR" then return end
+		if spell.name == "EkkoR" or spell.name == "EvelynnR" or spell.name == "FizzE" then return end
 		table.insert(debugList, "SpellCast")
 		local isInstant = bit.band(spell.spellData.resource.flags, 4) == 4
 		local castTime = (isInstant or spell.spellData.resource.canMoveWhileChanneling) and 0 or spell.castDelay
