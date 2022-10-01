@@ -849,6 +849,7 @@ cb.add(cb.load, function()
 		local QParticle = (self.BrandMenu.misc.q_particle:get() and player:spellSlot(SpellSlot.Q).state == 0)
 		local WParticle = (self.BrandMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
 		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
+			for key,value in ipairs(particleCastList) do
 				if (value.team and value.team == player.team) or not value.isEnemy then goto nextParticle end
 				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 				if not particleOwner or not particleOwner.isHero then
@@ -892,6 +893,7 @@ cb.add(cb.load, function()
 					self:DebugPrint("Casted W on particle")
 				end
 				::nextParticle::
+			end
 		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
