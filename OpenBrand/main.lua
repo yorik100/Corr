@@ -854,9 +854,9 @@ cb.add(cb.load, function()
 		local WParticle = (self.BrandMenu.misc.w_particle:get() and player:spellSlot(SpellSlot.W).state == 0)
 		if (QParticle or WParticle) and particleCastList[1] and not hasCasted then
 			for key,value in ipairs(particleCastList) do
-				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase) and value.obj.asEffectEmitter.targetAttachment.object or nil)
+				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 				if not particleOwner or not particleOwner.isHero then
-					if particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner then
+					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.isEnemy then
 						particleOwner = particleOwner.asAttackableUnit.owner
 					else
 						particleOwner = {
@@ -876,8 +876,8 @@ cb.add(cb.load, function()
 				if player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
-				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - value.particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
-				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - value.particleTime) + pingLatency) > self.wData.radius
+				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
+				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				if QParticle and not QCanDodge and (particleTime - pingLatency + 0.2) <= QLandingTime and not pred.findSpellCollisions(particleOwner, self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1] then
 					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 					hasCasted = true
