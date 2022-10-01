@@ -669,28 +669,28 @@ cb.add(cb.load, function()
 			particleGwenList[owner2.handle] = object
 			self:DebugPrint("Added particle Gwen")
 		elseif string.find(object.name, "Twisted") and string.find(object.name, "_R_Gatemarker_Red") and object.isEffectEmitter then
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos, bounding = 65, speed = 330})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Ekko_") and string.find(object.name, "_R_ChargeIndicator") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos, bounding = 65, speed = 340})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Pantheon_") and string.find(object.name, "_R_Update_Indicator_Enemy") and not string.find(object.name, "PreJump") and object.isEffectEmitter then
 			castPos = object.pos + object.asEffectEmitter.animationComponent.forward*1350
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.2, castingPos = castPos})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.2, castingPos = castPos, bounding = 65, speed = 345})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Galio_") and string.find(object.name, "_R_Tar_Ground_Enemy") and object.isEffectEmitter then
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.75, castingPos = object.pos})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 2.75, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Evelynn_") and string.find(object.name, "_R_Landing") and object.isEffectEmitter and (not isSylasRCast or isSylasRCast <= game.time - 0.1) then
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.85, castingPos = object.pos, bounding = 65, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "Tahm") and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos})
+		elseif string.find(object.name, "Tahm")  and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object then
             owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
             target = object.asEffectEmitter.targetAttachment.object
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, zedR = true})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
 			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)
@@ -1125,15 +1125,15 @@ cb.add(cb.load, function()
 			for key,value in ipairs(particleCastList) do
 				local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
 				if not particleOwner or not particleOwner.isHero then
-					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.isEnemy then
+					if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
 						particleOwner = particleOwner.asAttackableUnit.owner
 					else
 						particleOwner = {
 						isEnemy = true,
-						boundingRadius = 55,
-							characterIntermediate = {
-								moveSpeed = 350
-							},
+						boundingRadius = value.bounding,
+						characterIntermediate = {
+							moveSpeed = value.speed
+						},
 						homeless = true
 						}
 						print("Homeless particle : " .. value.obj.name)
