@@ -1147,20 +1147,23 @@ cb.add(cb.load, function()
 				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.qData.delay - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
-				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius	
+				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
+				local canQ = QParticle and not QCanDodge and player.pos:distance2D(value.castingPos) <= self:GetChargeRange(1500, 750, 1.5)
+				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
+				local canE = EParticle and not ECanDodge and player.pos:distance2D(value.castingPos) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
 				if QParticle then goto qBuffHandling end
-				if EParticle and not ECanDodge and player.pos:distance2D(value.castingPos) <= self.eData.range and (particleTime - pingLatency) <= ELandingTime and not pred.findSpellCollisions(particleOwner, self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1] then
+				if canE and (particleTime - pingLatency) <= ELandingTime then
 					player:castSpell(SpellSlot.E, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted E on particle")
-				elseif WParticle and (not EParticle or ECanDodge) and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range and (particleTime - pingLatency + 0.2) <= 0.75 then
+				elseif canW and not canE and (particleTime - pingLatency + 0.2) <= 0.75 then
 					player:castSpell(SpellSlot.W, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted W on particle")
 				end
 				goto nextParticle
 				::qBuffHandling::
-				if not QCanDodge and player.pos:distance2D(value.castingPos) <= self:GetChargeRange(1500, 750, 1.5) and (particleTime - pingLatency + 0.2) <= 0.5 then
+				if canQ and (particleTime - pingLatency + 0.2) <= 0.5 then
 					player:updateChargeableSpell(SpellSlot.Q, value.castingPos)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")
