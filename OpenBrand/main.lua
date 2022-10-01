@@ -873,7 +873,7 @@ cb.add(cb.load, function()
 				if value.zedR then
 					value.castingPos = value.target.pos + (value.owner.direction * value.target.boundingRadius)
 				end
-				if player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
+				if not value.castingPos or player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
