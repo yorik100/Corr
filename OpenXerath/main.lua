@@ -409,7 +409,7 @@ cb.add(cb.load, function()
 	end
 	
 	function Xerath:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags and target.isTargetable)
 	end
 	
 	function Xerath:WillGetHitByW(target)
@@ -1065,7 +1065,7 @@ cb.add(cb.load, function()
 		table.insert(debugList, "AutoLoop")
         for index, enemy in pairs(targetList) do
 			local stasisTime = self:getStasisTime(enemy)
-			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
+			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
 			
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
@@ -1284,7 +1284,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Combo")
 		for index, target in pairs(targetList) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetableToTeamFlags and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "ComboCalcs")
@@ -1353,7 +1353,7 @@ cb.add(cb.load, function()
 		
 		table.insert(debugList, "Harass")
 		for index, target in pairs(targetList) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetableToTeamFlags and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 			
 			table.insert(debugList, "HarassCalcs")
