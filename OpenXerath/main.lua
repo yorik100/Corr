@@ -661,7 +661,7 @@ cb.add(cb.load, function()
 			end
 		end
 		if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
-			if RTarget.isValid and not QTarget.isDead and not RTarget.isDead and RTarget.isOnScreen then
+			if RTarget.isValid and not RTarget.isDead and not RTarget.isDead and RTarget.isOnScreen then
 				RTarget:addGlow(graphics.argb(255, 255, 0, 0), ((5*-game.time) % 1) + 2, 0)
 			end
 		end
