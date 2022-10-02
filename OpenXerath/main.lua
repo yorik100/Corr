@@ -1181,7 +1181,7 @@ cb.add(cb.load, function()
 			table.insert(debugList, "ManualUlt")
 			if needsUltCasted and (orb.predictHP(enemy, 0.5 + pingLatency) > 0 or stasisTime > 0) and godBuffTimeAuto <= 1 + pingLatency and (noKillBuffTimeAuto <= 1 + pingLatency or RDamage < totalHP) then
 				if not self:WillGetHitByR(enemy) or not ((((totalHP) - RDamage)/enemy.maxHealth) < (ElderBuff and 0.2 or 0)) then
-					if player:spellSlot(SpellSlot.R).state == 0 then
+					if player:spellSlot(SpellSlot.R).state == 0 and (stasisTime - pingLatency + 0.2) < 0.6 then
 						local predResult = pred.getPrediction(enemy, self.rData)
 						local mustShoot = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast or (predResult and predResult.hitChance >= 9))
 						if mustShoot then
