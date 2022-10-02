@@ -172,7 +172,7 @@ cb.add(cb.load, function()
             delay = 0.5,
             speed = math.huge,
             range = 750,
-			radius = 50,
+			radius = 70,
             type = spellType.linear,
             rangeType = 1,
             boundingRadiusMod = true
@@ -181,7 +181,7 @@ cb.add(cb.load, function()
             delay = 0.5,
             speed = 1000,
             range = 1500,
-			radius = 50,
+			radius = 70,
             type = spellType.linear,
             rangeType = 1,
 			from = player.pos,
