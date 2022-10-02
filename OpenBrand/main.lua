@@ -546,6 +546,7 @@ cb.add(cb.load, function()
 				end
 			end
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
+			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_target_red.troy" and object.isEffectEmitter then
             target = object.asEffectEmitter.targetAttachment.object
 			for key, value in pairs(objManager.buildings.enemies.list) do
@@ -555,6 +556,7 @@ cb.add(cb.load, function()
 				end
 			end
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
+			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)
 		-- print(object.name)

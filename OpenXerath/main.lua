@@ -722,6 +722,7 @@ cb.add(cb.load, function()
 				end
 			end
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
+			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_target_red.troy" and object.isEffectEmitter then
             target = object.asEffectEmitter.targetAttachment.object
 			for key, value in pairs(objManager.buildings.enemies.list) do
@@ -731,6 +732,7 @@ cb.add(cb.load, function()
 				end
 			end
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
+			self:DebugPrint("Added cast particle " .. object.name)
 		end
 		table.remove(debugList, #debugList)
 		-- if (object.isEffectEmitter) then
@@ -869,7 +871,8 @@ cb.add(cb.load, function()
 		targetList = {}
 		for key, target in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(target)
-			if stasisTime > 0 then
+			local spellPrio = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 1)
+			if stasisTime > 0 or spellPrio then
 				table.insert(targetList, 1, target)
 			elseif not self.XerathMenu.misc.shield_logic:get() or (target.allShield + target.magicalShield) <= 0 or not target.isVisible then
 				table.insert(targetList, target)
@@ -1074,7 +1077,7 @@ cb.add(cb.load, function()
 			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
 			local castTime = (enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle]) and (casting[enemy.handle] - game.time) or 0
 			local prioCast = dashing or castTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.6)
-			local manualR = enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency) < 1.5
+			local manualR = enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency) < 1
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
 			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (castTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
@@ -1176,11 +1179,14 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			::ult::
 			table.insert(debugList, "ManualUlt")
-			if needsUltCasted and (orb.predictHP(enemy, 0.5 + pingLatency) > 0 or stasisTime > 0) and godBuffTimeAuto <= 0.75 + pingLatency and (noKillBuffTimeAuto <= 0.75 + pingLatency or RDamage < totalHP) then
+			if needsUltCasted and (orb.predictHP(enemy, 0.5 + pingLatency) > 0 or stasisTime > 0) and godBuffTimeAuto <= 1 + pingLatency and (noKillBuffTimeAuto <= 1 + pingLatency or RDamage < totalHP) then
 				if not self:WillGetHitByR(enemy) or not ((((totalHP) - RDamage)/enemy.maxHealth) < (ElderBuff and 0.2 or 0)) then
-					local mustShoot = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast)
-					if player:spellSlot(SpellSlot.R).state == 0 and mustShoot then
-						self:CastR(enemy, godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, RDamage, totalHP, CCTime, prioCast)
+					if player:spellSlot(SpellSlot.R).state == 0 then
+						local predResult = pred.getPrediction(enemy, self.rData)
+						local mustShoot = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast or (predResult and predResult.hitChance >= 9))
+						if mustShoot then
+							self:CastR(enemy, godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, RDamage, totalHP, CCTime, prioCast, predResult)
+						end
 					end
 					RTarget = enemy
 					table.remove(debugList, #debugList)
@@ -1483,10 +1489,10 @@ cb.add(cb.load, function()
 		return p and p.hitChance or 0
 	end
 
-    function Xerath:CastR(target, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, prioCast)
+    function Xerath:CastR(target, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, prioCast, predResult)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
-		local p = pred.getPrediction(target, self.rData)
+		local p = predResult
 		-- Cast R with pred
 		if godBuffTime <= 0.5 + pingLatency and (noKillBuffTime <= 0.5 + pingLatency or not ((((totalHP) - GetDamageR)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.rData.range and p.hitChance >= ((target.characterIntermediate.moveSpeed > 0 and not prioCast) and HitchanceMenu[self.XerathMenu.prediction.r_hitchance:get()] or 1) then
 			player:castSpell(SpellSlot.R, p.castPosition, true, false)
