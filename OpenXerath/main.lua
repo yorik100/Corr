@@ -880,7 +880,7 @@ cb.add(cb.load, function()
 				local accountQ = (player:spellSlot(SpellSlot.Q).state == 0 or (player.activeSpell and player.activeSpell.hash == 2320506602 and casting[player.handle] and game.time < casting[player.handle])) and player.pos:distance2D(target.pos) <= 1500
 				local accountW = (player:spellSlot(SpellSlot.W).state == 0 and player.pos:distance2D(target.pos) <= self.wData.range) or self:WillGetHitByW(target)
 				local accountE = (player:spellSlot(SpellSlot.E).state == 0 and player.pos:distance2D(target.pos) <= self.eData.range) or self:MissileE(target)
-				local accountR = rBuff
+				local accountR = rBuff and player.pos:distance2D(target.pos) <= self.rData.range
 				local QDamage = accountQ and self:GetDamageQ(target, 999) or 0
 				local WDamage = accountW and (accountQ and self:GetDamageW2Alternative(target, 999) or self:GetDamageW2(target, 999)) or 0
 				local EDamage = accountE and ((accountQ or accountW) and self:GetDamageEAlternative(target, 999) or self:GetDamageE(target, 999)) or 0
