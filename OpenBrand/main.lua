@@ -666,7 +666,7 @@ cb.add(cb.load, function()
 	drawRValue = {}
 	drawETargets = {}
 	for _, unit in pairs(ts.getTargets()) do
-		if unit.isHealthBarVisible and not unit.isDead then
+		if unit.isHealthBarVisible and not unit.isDead and unit.isOnScreen then
 			if unit.skinName == "Yuumi" then
 				local YuumiBuff = unit:getBuff("YuumiWAttach")
 				if YuumiBuff and YuumiBuff.caster.handle == unit.handle then goto continue end
@@ -730,7 +730,7 @@ cb.add(cb.load, function()
 					end
 				end
 			end
-		table.insert(debugList, "DrawELoop")
+			table.insert(debugList, "DrawELoop")
 			if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
 				for _, minion in pairs(objManager.aiBases.list) do
 					table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))

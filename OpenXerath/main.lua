@@ -656,12 +656,12 @@ cb.add(cb.load, function()
 		self:debugFlush()
 		table.insert(debugList, "Glow")
 		if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
-			if QTarget.isValid and QTarget.isVisible and not QTarget.isDead then
+			if QTarget.isValid and not QTarget.isDead and QTarget.isOnScreen then
 				QTarget:addGlow(graphics.argb(255, 255, 127, 0), ((5*-game.time) % 1) + 2, 0)
 			end
 		end
 		if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
-			if RTarget.isValid and RTarget.isVisible and not RTarget.isDead then
+			if RTarget.isValid and not QTarget.isDead and not RTarget.isDead and RTarget.isOnScreen then
 				RTarget:addGlow(graphics.argb(255, 255, 0, 0), ((5*-game.time) % 1) + 2, 0)
 			end
 		end
@@ -877,15 +877,15 @@ cb.add(cb.load, function()
 			elseif not self.XerathMenu.misc.shield_logic:get() or (target.allShield + target.magicalShield) <= 0 or not target.isVisible then
 				table.insert(targetList, target)
 			else
-				local accountQ = player:spellSlot(SpellSlot.Q).state == 0 or (player.activeSpell and player.activeSpell.hash == 2320506602 and casting[player.handle] and game.time < casting[player.handle])
-				local accountW = player:spellSlot(SpellSlot.W).state == 0 or self:WillGetHitByW(target)
-				local accountE = player:spellSlot(SpellSlot.E).state == 0 or self:MissileE(target)
-				local QDamage = self:GetDamageQ(target, 999)
-				local WDamage = accountQ and self:GetDamageW2Alternative(target, 999) or self:GetDamageW2(target, 999)
-				local EDamage = (accountQ or accountW) and self:GetDamageEAlternative(target, 999) or self:GetDamageE(target, 999)
-				local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
+				local accountQ = (player:spellSlot(SpellSlot.Q).state == 0 or (player.activeSpell and player.activeSpell.hash == 2320506602 and casting[player.handle] and game.time < casting[player.handle])) and player.pos:distance2D(target.pos) <= 1500
+				local accountW = player:spellSlot(SpellSlot.W).state == 0 or self:WillGetHitByW(target) and player.pos:distance2D(target.pos) <= self.wData.range
+				local accountE = player:spellSlot(SpellSlot.E).state == 0 or self:MissileE(target) and player.pos:distance2D(target.pos) <= self.eData.range
 				local accountR = rBuff
-				local potentialDamage = (accountQ and QDamage or 0) + (accountW and WDamage or 0) + (accountE and EDamage or 0) + (accountR and RDamage or 0)
+				local QDamage = accountQ and self:GetDamageQ(target, 999) or 0
+				local WDamage = accountW and (accountQ and self:GetDamageW2Alternative(target, 999) or self:GetDamageW2(target, 999)) or 0
+				local EDamage = accountE and ((accountQ or accountW) and self:GetDamageEAlternative(target, 999) or self:GetDamageE(target, 999)) or 0
+				local RDamage = accountR and self:GetDamageR(target, 0, 0, target.health, true) or 0
+				local potentialDamage = QDamage + WDamage + EDamage + RDamage
 				if (target.allShield + target.magicalShield)*2 <= potentialDamage then
 					table.insert(targetList, target)
 				else
@@ -953,7 +953,7 @@ cb.add(cb.load, function()
 			local isFirstShot = true
 			local totalHP = unit.health + unit.allShield + unit.magicalShield
 			local rActive = player:spellSlot(SpellSlot.R).level ~= 0 and (player:spellSlot(SpellSlot.R).cooldown <= 0 or particleRList[1] or rBuff)
-			if self.XerathMenu.drawings.draw_r_damage:get() and rActive then
+			if self.XerathMenu.drawings.draw_r_damage:get() and unit.isOnScreen and rActive then
 				rDamage = 0
 				for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
 					local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot)
@@ -974,7 +974,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "DrawLoop2")
-			if self.XerathMenu.drawings.draw_r_damage_text:get() and rActive then
+			if self.XerathMenu.drawings.draw_r_damage_text:get() and unit.isOnScreen and rActive then
 				if not rDamage then
 					rDamage = 0
 					for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
@@ -1530,13 +1530,13 @@ cb.add(cb.load, function()
             graphics.drawCircle(player.pos, self.rData.range, 2, graphics.argb(alpha, 255, 127, 0))
         end
         if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
-			if QTarget.isValid and QTarget.isVisible and not QTarget.isDead then
+			if QTarget.isValid and not QTarget.isDead then
 				graphics.drawCircle(QTarget.pos, 100, 2, graphics.argb(255, 255, 127, 0))
 				graphics.drawCircle(QTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 127, 0))
 			end
         end
         if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
-			if RTarget.isValid and RTarget.isVisible and not RTarget.isDead then
+			if RTarget.isValid and not RTarget.isDead then
 				graphics.drawCircle(RTarget.pos, 100, 2, graphics.argb(255, 255, 0, 0))
 				graphics.drawCircle(RTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 0, 0))
 			end
