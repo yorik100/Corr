@@ -17,25 +17,25 @@ local JSON = require("jsonLib")
 cb.add(cb.load, function()
 
 	if menu.delete('open_Xerath') then return end
-    -- Check if the current champion is Annie. If not, don't load the script
-    if player.skinName ~= "Xerath" then return end
+	-- Check if the current champion is Annie. If not, don't load the script
+	if player.skinName ~= "Xerath" then return end
 	print("[OpenXerath] Open Xerath loaded")
-	
+
 	local data = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/data.json"
 	local main = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenXerath/main.lua"
 	local version = nil
 	local scriptName = "OpenXerath"
-    _G.net.getAsync(data, function(response)
-        if not response then
-            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: no response</font>")
-        end
+	_G.net.getAsync(data, function(response)
+		if not response then
+			return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: no response</font>")
+		end
 
-        if response.status ~= 200 then
-            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: " .. response.status .. "</font>")
-        end
-        local json = JSON.decode(response.text)
+		if response.status ~= 200 then
+			return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: " .. response.status .. "</font>")
+		end
+		local json = JSON.decode(response.text)
 
-        version = json["Version"]
+		version = json["Version"]
 		_G.net.autoUpdateDirect(data, main, function(success)
 			if success then
 				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. version .. ")</font>")
@@ -43,7 +43,7 @@ cb.add(cb.load, function()
 				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. " or higher)</font>")
 			end
 		end)
-    end)
+	end)
 	fileList = fs.getFiles(fs.scriptPath .. scriptName)
 	local tempText = ""
 	local shouldPrint = false
@@ -66,12 +66,12 @@ cb.add(cb.load, function()
 		chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Unused file(s) found in " .. scriptName .. " folder :" .. tempText)
 	end
 
-    -- Create a 'class/table' where all the functions will be stored
+	-- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
 	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf"}
 	local selfBuffToCheck = {"XerathArcanopulseChargeUp", "xerathrshots", "xerathascended2onhit", "SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
-    local Xerath = {}
+	local Xerath = {}
 	local buffs = {}
 	local flaggingFlag = false
 	local flaggingPos = nil
@@ -112,111 +112,111 @@ cb.add(cb.load, function()
 	local allyREveCast = nil
 	local teleportOwner = nil
 
-    -- Creating a debug print function, so the developer can easily check the output and if someone
-    -- wants to play with the simple script can disable the debug prints in the console
-    function Xerath:DebugPrint(...)
-        if not self.XerathMenu.debug_print:get() then return end
-        print("[OpenXerath] ".. ...)
-    end
+	-- Creating a debug print function, so the developer can easily check the output and if someone
+	-- wants to play with the simple script can disable the debug prints in the console
+	function Xerath:DebugPrint(...)
+		if not self.XerathMenu.debug_print:get() then return end
+		print("[OpenXerath] ".. ...)
+	end
 
-    -- This will be our initialization function, we call it to load the script and all its variables and functions inside
-    function Xerath:__init()
-	
+	-- This will be our initialization function, we call it to load the script and all its variables and functions inside
+	function Xerath:__init()
+
 		self.castTime = {0.005,0.25,0.25,0,0.5}
 		self.castTimeClock = {0,0,0,0,0}
 
-        -- tables with spell data for prediction
-        self.eData = {
-            delay = 0.25,
-            speed = 1400,
-            range = 1125,
+		-- tables with spell data for prediction
+		self.eData = {
+			delay = 0.25,
+			speed = 1400,
+			range = 1125,
 			radius = 60,
 			collision = { -- if not defined -> no collision calcs
-				hero = SpellCollisionType.Hard, 
+				hero = SpellCollisionType.Hard,
 				-- Hard = Collides with object and stops on collision
-				minion = SpellCollisionType.Hard, 
+				minion = SpellCollisionType.Hard,
 				-- Soft = Collides with object and passes through them.
-				tower = SpellCollisionType.None, 
+				tower = SpellCollisionType.None,
 				-- None = Doesn't collide with object. Also default if not defined
-				extraRadius = 10, 
-				-- if not defined -> default = 0		
+				extraRadius = 10,
+				-- if not defined -> default = 0
 				-- if not defined -> default = CollisionFlags.None
 				flags = bit.bor(CollisionFlags.Windwall, CollisionFlags.Samira, CollisionFlags.Braum)
 			},
-            type = spellType.linear,
-            rangeType = 1,
-            boundingRadiusMod = true
-        }
-        self.eCollideData = {
-            delay = 0,
-            speed = 1400,
-            range = 1125,
+			type = spellType.linear,
+			rangeType = 1,
+			boundingRadiusMod = true
+		}
+		self.eCollideData = {
+			delay = 0,
+			speed = 1400,
+			range = 1125,
 			radius = 60,
 			collision = { -- if not defined -> no collision calcs
-				hero = SpellCollisionType.Hard, 
+				hero = SpellCollisionType.Hard,
 				-- Hard = Collides with object and stops on collision
-				minion = SpellCollisionType.Hard, 
+				minion = SpellCollisionType.Hard,
 				-- Soft = Collides with object and passes through them.
-				tower = SpellCollisionType.None, 
+				tower = SpellCollisionType.None,
 				-- None = Doesn't collide with object. Also default if not defined
-				extraRadius = 10, 
-				-- if not defined -> default = 0		
+				extraRadius = 10,
+				-- if not defined -> default = 0
 				-- if not defined -> default = CollisionFlags.None
 				flags = bit.bor(CollisionFlags.Windwall, CollisionFlags.Samira, CollisionFlags.Braum)
 			},
-            type = spellType.linear,
-            rangeType = 1,
-            boundingRadiusMod = true
-        }
+			type = spellType.linear,
+			rangeType = 1,
+			boundingRadiusMod = true
+		}
 		self.qData = {
-            delay = 0.5,
-            speed = math.huge,
-            range = 750,
+			delay = 0.5,
+			speed = math.huge,
+			range = 750,
 			radius = 70,
-            type = spellType.linear,
-            rangeType = 1,
-            boundingRadiusMod = true
-        }
+			type = spellType.linear,
+			rangeType = 1,
+			boundingRadiusMod = true
+		}
 		self.qChargeData = {
-            delay = 0.5,
-            speed = 1000,
-            range = 1500,
+			delay = 0.5,
+			speed = 1000,
+			range = 1500,
 			radius = 70,
-            type = spellType.linear,
-            rangeType = 1,
+			type = spellType.linear,
+			rangeType = 1,
 			from = player.pos,
-            boundingRadiusMod = true
-        }
+			boundingRadiusMod = true
+		}
 		self.wData = {
-            delay = 0.75,
-            speed = math.huge,
-            range = 1000,
+			delay = 0.75,
+			speed = math.huge,
+			range = 1000,
 			radius = 275,
-            type = spellType.circular,
-            rangeType = 0,
-            boundingRadiusMod = true
-        }
+			type = spellType.circular,
+			rangeType = 0,
+			boundingRadiusMod = true
+		}
 		self.w2Data = {
-            delay = 0.75,
-            speed = math.huge,
-            range = 1000,
+			delay = 0.75,
+			speed = math.huge,
+			range = 1000,
 			radius = 125,
-            type = spellType.circular,
-            rangeType = 0,
-            boundingRadiusMod = true
-        }
+			type = spellType.circular,
+			rangeType = 0,
+			boundingRadiusMod = true
+		}
 		self.rData = {
-            delay = 0.6,
-            speed = math.huge,
-            range = 5000,
+			delay = 0.6,
+			speed = math.huge,
+			range = 5000,
 			radius = 200,
-            type = spellType.circular,
-            rangeType = 0,
-            boundingRadiusMod = true
-        }
+			type = spellType.circular,
+			rangeType = 0,
+			boundingRadiusMod = true
+		}
 
-        -- self.AnnieMenu will store all the menu data which got returned from the Annie:CreateMenu function
-        self.XerathMenu = self:CreateMenu()
+		-- self.AnnieMenu will store all the menu data which got returned from the Annie:CreateMenu function
+		self.XerathMenu = self:CreateMenu()
 		for _, hero in pairs(objManager.heroes.list) do
 			for _, buff in pairs(hero.buffs) do
 				if buff and buff.valid then
@@ -241,50 +241,50 @@ cb.add(cb.load, function()
 			end
 		end
 
-        -- Adding all callbacks that will be used in the script, the triple dots (...) means that the function will
-        -- take the return value of the function before it, so we can use it in our function
+		-- Adding all callbacks that will be used in the script, the triple dots (...) means that the function will
+		-- take the return value of the function before it, so we can use it in our function
 		cb.add(cb.tick,function(...) self:OnTick(...) end)
-        cb.add(cb.draw,function(...) self:OnDraw(...) end)
+		cb.add(cb.draw,function(...) self:OnDraw(...) end)
 		cb.add(cb.buff,function(...) self:OnBuff(...) end)
 		cb.add(cb.glow,function(...) self:OnGlow(...) end)
 		cb.add(cb.create,function(...) self:OnCreate(...) end)
 		cb.add(cb.delete,function(...) self:OnDelete(...) end)
-        cb.add(cb.processSpell,function(...) self:OnCastSpell(...) end)
+		cb.add(cb.processSpell,function(...) self:OnCastSpell(...) end)
 		cb.add(cb.basicAttack,function(...) self:OnBasicAttack(...) end)
-    end
+	end
 
-    -- This function will create the menu and return it to the Annie:__init function and store it in self.AnnieMenu
-    function Xerath:CreateMenu()
-        -- Create the main menu
-        local mm = menu.create('open_Xerath', 'OpenXerath')
-        -- Create a submenu inside the main menu
-        mm:header('combo', 'Combo Mode')
-        -- Create On/Off option inside the combo submenu
-        mm.combo:boolean('use_q', 'Use Q', true)
-        mm.combo:boolean('use_w', 'Use W', true)
-        mm.combo:boolean('use_e', 'Use E', true)
-        -- Create slider option inside the combo submenu
-        -- mm.combo:slider('multi_r', 'Multi target R', 2, 3, 5, 1)
-        -- mm.combo:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
-        mm:header('harass', 'Harass Mode')
-        mm.harass:boolean('use_q', 'Use Q', true)
-        mm.harass:boolean('use_w', 'Use W', true)        -- mm.harass:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
-        -- mm:header('killsteal', 'KillSteal')
-        -- mm.killsteal:boolean('use_r', 'Use R', true)
-        -- TODO
-        -- mm:header('lasthit', 'LastHit')
-        -- mm.lasthit:boolean('use_w', 'Use W', true)
-        -- mm:header('laneclear', 'LaneClear')
-        -- mm.laneclear:boolean('use_w', 'Use W', true)
-        -- mm:header('jungleclear', 'JungleClear')
-        -- mm.jungleclear:boolean('use_w', 'Use W', true)
-        mm:header('drawings', 'Drawings')
-        mm.drawings:boolean('draw_q_range', 'Draw Q Range', true)
-        mm.drawings:boolean('draw_w_range', 'Draw W Range', true)
-        mm.drawings:boolean('draw_e_range', 'Draw E Range', true)
-        mm.drawings:boolean('draw_r_range', 'Draw R Range', true)
-        mm.drawings:boolean('draw_r_range_minimap', 'Draw R Range on minimap', true)
-        mm.drawings:boolean('draw_near_mouse_r_range', 'Draw R2 near mouse range', true)
+	-- This function will create the menu and return it to the Annie:__init function and store it in self.AnnieMenu
+	function Xerath:CreateMenu()
+		-- Create the main menu
+		local mm = menu.create('open_Xerath', 'OpenXerath')
+		-- Create a submenu inside the main menu
+		mm:header('combo', 'Combo Mode')
+		-- Create On/Off option inside the combo submenu
+		mm.combo:boolean('use_q', 'Use Q', true)
+		mm.combo:boolean('use_w', 'Use W', true)
+		mm.combo:boolean('use_e', 'Use E', true)
+		-- Create slider option inside the combo submenu
+		-- mm.combo:slider('multi_r', 'Multi target R', 2, 3, 5, 1)
+		-- mm.combo:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
+		mm:header('harass', 'Harass Mode')
+		mm.harass:boolean('use_q', 'Use Q', true)
+		mm.harass:boolean('use_w', 'Use W', true)        -- mm.harass:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
+		-- mm:header('killsteal', 'KillSteal')
+		-- mm.killsteal:boolean('use_r', 'Use R', true)
+		-- TODO
+		-- mm:header('lasthit', 'LastHit')
+		-- mm.lasthit:boolean('use_w', 'Use W', true)
+		-- mm:header('laneclear', 'LaneClear')
+		-- mm.laneclear:boolean('use_w', 'Use W', true)
+		-- mm:header('jungleclear', 'JungleClear')
+		-- mm.jungleclear:boolean('use_w', 'Use W', true)
+		mm:header('drawings', 'Drawings')
+		mm.drawings:boolean('draw_q_range', 'Draw Q Range', true)
+		mm.drawings:boolean('draw_w_range', 'Draw W Range', true)
+		mm.drawings:boolean('draw_e_range', 'Draw E Range', true)
+		mm.drawings:boolean('draw_r_range', 'Draw R Range', true)
+		mm.drawings:boolean('draw_r_range_minimap', 'Draw R Range on minimap', true)
+		mm.drawings:boolean('draw_near_mouse_r_range', 'Draw R2 near mouse range', true)
 		mm.drawings:boolean('draw_r_damage', 'Draw R Damage', true)
 		mm.drawings:boolean('draw_r_damage_text', 'Draw R Damage Text', true)
 		mm.drawings:boolean('draw_r_list', 'Draw R Killable List', true)
@@ -295,7 +295,7 @@ cb.add(cb.load, function()
 		mm.drawings:boolean('draw_debug_w', 'Draw W Hitbox', true)
 		mm.drawings:boolean('draw_debug_e', 'Draw E Trajectory', true)
 		mm.drawings:boolean('draw_debug_r', 'Draw R Hitbox', true)
-        mm:header('misc', 'Misc')
+		mm:header('misc', 'Misc')
 		mm.misc:boolean('e_dash', 'Auto E on dashes', true)
 		mm.misc:boolean('w_dash', 'Auto W on dashes', true)
 		mm.misc:boolean('q_dash', 'Auto Q release on dashes', true)
@@ -325,13 +325,13 @@ cb.add(cb.load, function()
 		mm.prediction:list('w_hitchance', 'W Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 3)
 		mm.prediction:list('e_hitchance', 'E Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 3)
 		mm.prediction:list('r_hitchance', 'R Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 2)
-        -- Create On/Off option inside the main menu
-        mm:boolean('debug_print', 'Debug Print', true)
+		-- Create On/Off option inside the main menu
+		mm:boolean('debug_print', 'Debug Print', true)
 		mm:boolean('debug_print_buffs', 'Debug Print Buffs', false)
-        -- Return menu data
-        return mm
-    end
-	
+		-- Return menu data
+		return mm
+	end
+
 	-- Function to get a specific buff on an entity
 	local gameObject = _G.gameObject
 	function gameObject:getBuff(name)
@@ -347,23 +347,23 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 	end
-	
+
 	function Xerath:debugFlush()
 		if debugList[1] then
 			local debugText = ""
-			for key,value in ipairs(debugList) do 
+			for key,value in ipairs(debugList) do
 				debugText = debugText .. " " .. value
 			end
 			print("[OpenDebug] Error found in" .. debugText)
 			debugList = {}
 		end
 	end
-	
+
 	function Xerath:gwenWParticlePos(target)
 		local particle = particleGwenList[target.handle]
 		return particle.pos
 	end
-	
+
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Xerath:godBuffTime(target)
 		local buffTime = 0
@@ -373,13 +373,13 @@ cb.add(cb.load, function()
 			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) and (buff.name ~= "gwenwmissilecatcher" or player.pos:distance2D(self:gwenWParticlePos(target)) > 440) then
 				buffTime = buff.remainingTime
 				if buff.name == "PantheonE" then
-					buffTime = buffTime + 0.15 
+					buffTime = buffTime + 0.15
 				end
 			end
 		end
 		return buffTime
 	end
-	
+
 	function Xerath:noKillBuffTime(target)
 		local buffTime = 0
 		local buffList = {"UndyingRage", "ChronoShift"}
@@ -391,7 +391,7 @@ cb.add(cb.load, function()
 		end
 		return buffTime
 	end
-	
+
 	function Xerath:getStasisTime(target)
 		local buffTime = 0
 		local buffList = {"ChronoRevive", "BardRStasis", "ZhonyasRingShield", "LissandraRSelf"}
@@ -407,11 +407,11 @@ cb.add(cb.load, function()
 		end
 		return buffTime
 	end
-	
+
 	function Xerath:invisibleValid(target, distance)
 		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags and target.isTargetable)
 	end
-	
+
 	function Xerath:WillGetHitByW(target)
 		if not target then return false end
 		for key,value in ipairs(particleWList) do
@@ -421,7 +421,7 @@ cb.add(cb.load, function()
 		end
 		return false
 	end
-	
+
 	function Xerath:WillGetHitByR(target)
 		if not target then return false end
 		if disappearedRObject.obj and disappearedRObject.time and disappearedRObject.time + 0.099 > game.time then
@@ -437,7 +437,7 @@ cb.add(cb.load, function()
 		end
 		return false
 	end
-	
+
 	function Xerath:MissileE(target)
 		for key, value in ipairs(particleEList) do
 			local endPos = value.obj.endPosition
@@ -454,7 +454,7 @@ cb.add(cb.load, function()
 			end
 		end
 	end
-	
+
 	-- All the charging stuff is strongly inspired from BGX charging range calcs
 	function Xerath:GetChargePercentage(spell_charge_duration)
 		local buff = qBuff
@@ -464,7 +464,7 @@ cb.add(cb.load, function()
 		end
 		return 0
 	end
-	
+
 	function Xerath:GetTrueChargePercentage(spell_charge_duration)
 		local buff = qBuff
 
@@ -473,34 +473,34 @@ cb.add(cb.load, function()
 		end
 		return 0
 	end
-	
+
 	function Xerath:IsCharging()
 		local buff = qBuff
 		return buff and buff.valid
 	end
-	
+
 	function Xerath:GetChargeRange(max_range, min_range, duration)
 		if self:IsCharging() then
 			return min_range + math.min(max_range - min_range, (max_range - min_range) * self:GetChargePercentage(duration))
 		end
 		return min_range
 	end
-	
+
 	function Xerath:GetTrueChargeRange(max_range, min_range, duration)
 		if self:IsCharging() then
 			return min_range + math.min(max_range - min_range, (max_range - min_range) * self:GetTrueChargePercentage(duration))
 		end
 		return min_range
 	end
-	
+
 	-- Thanks seidhr
 	function Xerath:IsFacingPlayer(entity)
 		local skillshotDirection = (entity.pos - player.pos):normalized()
 		local direction = entity.direction
-        local facing = skillshotDirection:dot(direction)
+		local facing = skillshotDirection:dot(direction)
 		return facing < 0
 	end
-	
+
 	function Xerath:GetExtraDamage(target, shots, predictedHealth, damageDealt, isCC, firstShot)
 		local damage = 0
 		local buff3 = myHero:getBuff("ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua")
@@ -580,78 +580,78 @@ cb.add(cb.load, function()
 		-- print(damage)
 		return damage
 	end
-    -- Calculates the damage of a spell on a target, if spell is on cooldown it will return 0.
-    -- The time variable will be a buffer for the spell cooldown. ( If time is set to 0.5 it will ignore the cooldown of the spell if the cooldown is 0.5 seconds or less )
-    function Xerath:GetDamageQ(target, time)
-        local spell = player:spellSlot(SpellSlot.Q)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 30 + spell.level * 40 + player.totalAbilityPower*0.85
+	-- Calculates the damage of a spell on a target, if spell is on cooldown it will return 0.
+	-- The time variable will be a buffer for the spell cooldown. ( If time is set to 0.5 it will ignore the cooldown of the spell if the cooldown is 0.5 seconds or less )
+	function Xerath:GetDamageQ(target, time)
+		local spell = player:spellSlot(SpellSlot.Q)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 30 + spell.level * 40 + player.totalAbilityPower*0.85
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, false, true)
-    end
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, false, true)
+	end
 
-    function Xerath:GetDamageW(target, time)
-        local spell = player:spellSlot(SpellSlot.W)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 25 + 35 * spell.level + player.totalAbilityPower*0.6
+	function Xerath:GetDamageW(target, time)
+		local spell = player:spellSlot(SpellSlot.W)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 25 + 35 * spell.level + player.totalAbilityPower*0.6
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
-    end
-	
-    function Xerath:GetDamageW2(target, time)
-        local spell = player:spellSlot(SpellSlot.W)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = (25 + 35 * spell.level + player.totalAbilityPower*0.6)*1.667
-		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
-    end
-	
-    function Xerath:GetDamageW2Alternative(target, time)
-        local spell = player:spellSlot(SpellSlot.W)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = (25 + 35 * spell.level + player.totalAbilityPower*0.6)*1.667
-		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, false)
-    end
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
+	end
 
-    function Xerath:GetDamageE(target, time)
-        local spell = player:spellSlot(SpellSlot.E)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 50 + 30 * spell.level + player.totalAbilityPower*0.45
+	function Xerath:GetDamageW2(target, time)
+		local spell = player:spellSlot(SpellSlot.W)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = (25 + 35 * spell.level + player.totalAbilityPower*0.6)*1.667
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
-    end
-	
-    function Xerath:GetDamageEAlternative(target, time)
-        local spell = player:spellSlot(SpellSlot.E)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 50 + 30 * spell.level + player.totalAbilityPower*0.45
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
+	end
+
+	function Xerath:GetDamageW2Alternative(target, time)
+		local spell = player:spellSlot(SpellSlot.W)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = (25 + 35 * spell.level + player.totalAbilityPower*0.6)*1.667
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, false)
-    end
-	
-    function Xerath:GetDamageR(target, time, shots, predictedHealth, firstShot)
-        local spell = player:spellSlot(SpellSlot.R)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > ((particleRList[1] or rBuff) and 999 or time) then return 0 end
-        local damage = (150 + 50 * spell.level + player.totalAbilityPower*0.45)
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, false)
+	end
+
+	function Xerath:GetDamageE(target, time)
+		local spell = player:spellSlot(SpellSlot.E)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 50 + 30 * spell.level + player.totalAbilityPower*0.45
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, shots, predictedHealth, damageLibDamage, false, firstShot)
-    end
-	
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true)
+	end
+
+	function Xerath:GetDamageEAlternative(target, time)
+		local spell = player:spellSlot(SpellSlot.E)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 50 + 30 * spell.level + player.totalAbilityPower*0.45
+		local damageLibDamage = damageLib.magical(player, target, damage)
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, false)
+	end
+
+	function Xerath:GetDamageR(target, time, shots, predictedHealth, firstShot)
+		local spell = player:spellSlot(SpellSlot.R)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > ((particleRList[1] or rBuff) and 999 or time) then return 0 end
+		local damage = (150 + 50 * spell.level + player.totalAbilityPower*0.45)
+		local damageLibDamage = damageLib.magical(player, target, damage)
+		return damageLibDamage + self:GetExtraDamage(target, shots, predictedHealth, damageLibDamage, false, firstShot)
+	end
+
 	function Xerath:OnGlow()
 		self:debugFlush()
 		table.insert(debugList, "Glow")
@@ -667,7 +667,7 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 	end
-	
+
 	function Xerath:OnCreate(object)
 		table.insert(debugList, "Create")
 		local particleOwner = nil
@@ -706,14 +706,14 @@ cb.add(cb.load, function()
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object then
-            owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
-            target = object.asEffectEmitter.targetAttachment.object
+			owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
+			target = object.asEffectEmitter.targetAttachment.object
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_red.troy" and object.isEffectEmitter then
-            teleportOwner = object.asEffectEmitter.attachment.object
+			teleportOwner = object.asEffectEmitter.attachment.object
 		elseif object.name == "global_ss_teleport_turret_red.troy" and object.isEffectEmitter then
-            target = object.asEffectEmitter.attachment.object
+			target = object.asEffectEmitter.attachment.object
 			local nexusPos = nil
 			for key, value in pairs(objManager.buildings.enemies.list) do
 				if value.isNexus then
@@ -724,7 +724,7 @@ cb.add(cb.load, function()
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_target_red.troy" and object.isEffectEmitter then
-            target = object.asEffectEmitter.targetAttachment.object
+			target = object.asEffectEmitter.targetAttachment.object
 			for key, value in pairs(objManager.buildings.enemies.list) do
 				if value.isNexus then
 					nexusPos = value.pos
@@ -736,13 +736,13 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 		-- if (object.isEffectEmitter) then
-			-- print(object.name)
-			-- print(object.asEffectEmitter.attachment.object and object.asEffectEmitter.attachment.object.name or "")
-			-- print(object.asEffectEmitter.targetAttachment.object and object.asEffectEmitter.targetAttachment.object.name or "")
-			-- print("---------------------")
+		-- print(object.name)
+		-- print(object.asEffectEmitter.attachment.object and object.asEffectEmitter.attachment.object.name or "")
+		-- print(object.asEffectEmitter.targetAttachment.object and object.asEffectEmitter.targetAttachment.object.name or "")
+		-- print("---------------------")
 		-- end
 	end
-	
+
 	function Xerath:OnDelete(object)
 		self:debugFlush()
 		table.insert(debugList, "Delete")
@@ -788,17 +788,17 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 	end
-	
+
 	-- Seems more optimal to make a buff list like that, I guess, I was told so
-    function Xerath:OnBuff(source, buff, gained)
+	function Xerath:OnBuff(source, buff, gained)
 		self:debugFlush()
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
 		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
-				buffs["Time" .. source.handle] = game.time + 4
-				self:DebugPrint("Detected Guardian angel on " .. source.skinName)
+			buffs["Time" .. source.handle] = game.time + 4
+			self:DebugPrint("Detected Guardian angel on " .. source.skinName)
 		end
-		if self.XerathMenu.debug_print_buffs:get() then	
+		if self.XerathMenu.debug_print_buffs:get() then
 			self:DebugPrint(source.skinName .. " -> Buff " .. (gained and "gained" or "lost") .. " : (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		end
 		local buffFlag = false
@@ -827,7 +827,7 @@ cb.add(cb.load, function()
 			self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		end
 		table.remove(debugList, #debugList)
-    end
+	end
 
 	function Xerath:OnTick()
 		self:debugFlush()
@@ -837,7 +837,7 @@ cb.add(cb.load, function()
 		self:TargetSelector()
 		QTarget = nil
 		RTarget = nil
-        if player.isDead then table.remove(debugList, #debugList) return end
+		if player.isDead then table.remove(debugList, #debugList) return end
 		local stunBuffList = {BuffType.Stun, BuffType.Silence, BuffType.Taunt, BuffType.Polymorph, BuffType.Fear, BuffType.Charm, BuffType.Suppression, BuffType.Knockup, BuffType.Knockback, BuffType.Asleep}
 		for key,buff in ipairs(stunBuffList) do
 			if player:hasBuffOfType(buff) then
@@ -859,12 +859,12 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			return
 		end
-        self:Combo()
-        self:Harass()
+		self:Combo()
+		self:Harass()
 		self:Auto()
 		table.remove(debugList, #debugList)
-    end
-	
+	end
+
 	function Xerath:TargetSelector()
 		table.insert(debugList, "TargetSelector")
 		local lowPrio = {}
@@ -898,84 +898,62 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 	end
-	
+
 	function Xerath:DrawCalcs()
-	table.insert(debugList, "DrawCalcs")
-	table.insert(debugList, "ParticleDelete")
-	for key,value in ipairs(particleRList) do
-		if game.time > value.time + 0.8 then
-			disappearedRObject = {
+		table.insert(debugList, "DrawCalcs")
+		table.insert(debugList, "ParticleDelete")
+		for key,value in ipairs(particleRList) do
+			if game.time > value.time + 0.8 then
+				disappearedRObject = {
 					obj = value.obj,
 					time = game.time
-			}
-			table.remove(particleRList, key)
-			self:DebugPrint("Removed particle R")
-		end
-	end
-	for key,value in ipairs(particleWList) do
-		if game.time > value.time + 0.783 then
-			table.remove(particleWList, key)
-			self:DebugPrint("Removed particle W")
-		end
-	end
-	table.remove(debugList, #debugList)
-	table.insert(debugList, "DrawCalcs1")
-	changedList = (oldXValue and oldYValue) and (oldXValue ~= self.XerathMenu.drawings.draw_r_list_x:get() or oldYValue ~= self.XerathMenu.drawings.draw_r_list_y:get()) or false
-	oldXValue = self.XerathMenu.drawings.draw_r_list_x:get()
-	oldYValue = self.XerathMenu.drawings.draw_r_list_y:get()
-	if changedList then
-		listChanged = os.clock()
-	end
-	changed = oldValue and self.XerathMenu.misc.near_mouse_r:get() ~= oldValue or false
-	oldValue = self.XerathMenu.misc.near_mouse_r:get()
-	if changed then
-		changeTime = os.clock()
-	end
-	rBuff = myHero:getBuff("xerathrshots")
-	qBuff = myHero:getBuff("XerathArcanopulseChargeUp")
-	ElderBuff = myHero:getBuff("ElderDragonBuff")
-	table.remove(debugList, #debugList)
-	table.insert(debugList, "DrawLoop")
-	killList = {}
-	drawRDamage = {}
-	RKillable = {}
-	drawRValue = {}
-	for _, unit in pairs(ts.getTargets()) do
-		if unit.isHealthBarVisible and not unit.isDead then
-			if unit.skinName == "Yuumi" then
-				local YuumiBuff = unit:getBuff("YuumiWAttach")
-				if YuumiBuff and YuumiBuff.caster.handle == unit.handle then goto continue end
+				}
+				table.remove(particleRList, key)
+				self:DebugPrint("Removed particle R")
 			end
-			table.insert(debugList, "DrawLoop1")
-			-- Draw R damage on every enemies HP bars
-			local rDamage = nil
-			local shotsToKill = 0
-			local isFirstShot = true
-			local totalHP = unit.health + unit.allShield + unit.magicalShield
-			local rActive = player:spellSlot(SpellSlot.R).level ~= 0 and (player:spellSlot(SpellSlot.R).cooldown <= 0 or particleRList[1] or rBuff)
-			if self.XerathMenu.drawings.draw_r_damage:get() and unit.isOnScreen and rActive then
-				rDamage = 0
-				for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
-					local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot)
-					local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot)
-					if ((totalHP) - (rDamage + calculatedRMaxDamage))/unit.maxHealth < (ElderBuff and 0.2 or 0) then
-						rDamage = rDamage + calculatedRMaxDamage
-						shotsToKill = shotsToKill + 1
-						break
-					end
-					rDamage = rDamage + calculatedRDamage
-					shotsToKill = shotsToKill + 1
-					isFirstShot = false
-				end
-				if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
-					rDamage = totalHP
-				end
-				table.insert(drawRDamage, {unit = unit, damage = rDamage})
+		end
+		for key,value in ipairs(particleWList) do
+			if game.time > value.time + 0.783 then
+				table.remove(particleWList, key)
+				self:DebugPrint("Removed particle W")
 			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "DrawLoop2")
-			if self.XerathMenu.drawings.draw_r_damage_text:get() and unit.isOnScreen and rActive then
-				if not rDamage then
+		end
+		table.remove(debugList, #debugList)
+		table.insert(debugList, "DrawCalcs1")
+		changedList = (oldXValue and oldYValue) and (oldXValue ~= self.XerathMenu.drawings.draw_r_list_x:get() or oldYValue ~= self.XerathMenu.drawings.draw_r_list_y:get()) or false
+		oldXValue = self.XerathMenu.drawings.draw_r_list_x:get()
+		oldYValue = self.XerathMenu.drawings.draw_r_list_y:get()
+		if changedList then
+			listChanged = os.clock()
+		end
+		changed = oldValue and self.XerathMenu.misc.near_mouse_r:get() ~= oldValue or false
+		oldValue = self.XerathMenu.misc.near_mouse_r:get()
+		if changed then
+			changeTime = os.clock()
+		end
+		rBuff = myHero:getBuff("xerathrshots")
+		qBuff = myHero:getBuff("XerathArcanopulseChargeUp")
+		ElderBuff = myHero:getBuff("ElderDragonBuff")
+		table.remove(debugList, #debugList)
+		table.insert(debugList, "DrawLoop")
+		killList = {}
+		drawRDamage = {}
+		RKillable = {}
+		drawRValue = {}
+		for _, unit in pairs(ts.getTargets()) do
+			if unit.isHealthBarVisible and not unit.isDead then
+				if unit.skinName == "Yuumi" then
+					local YuumiBuff = unit:getBuff("YuumiWAttach")
+					if YuumiBuff and YuumiBuff.caster.handle == unit.handle then goto continue end
+				end
+				table.insert(debugList, "DrawLoop1")
+				-- Draw R damage on every enemies HP bars
+				local rDamage = nil
+				local shotsToKill = 0
+				local isFirstShot = true
+				local totalHP = unit.health + unit.allShield + unit.magicalShield
+				local rActive = player:spellSlot(SpellSlot.R).level ~= 0 and (player:spellSlot(SpellSlot.R).cooldown <= 0 or particleRList[1] or rBuff)
+				if self.XerathMenu.drawings.draw_r_damage:get() and unit.isOnScreen and rActive then
 					rDamage = 0
 					for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
 						local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot)
@@ -992,54 +970,76 @@ cb.add(cb.load, function()
 					if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
 						rDamage = totalHP
 					end
+					table.insert(drawRDamage, {unit = unit, damage = rDamage})
 				end
-				if rDamage > 0 then
-					local pos = vec2(unit.healthBarPosition.x + 70, unit.healthBarPosition.y - 30)
-					local hpPercent =  100-((totalHP - rDamage) / (unit.maxHealth + unit.allShield + unit.magicalShield))*100
-					local text = tostring(math.ceil(totalHP - rDamage) .. " (" .. tostring(math.floor(hpPercent)) .. "%)")
-					-- Inspired from https://github.com/plsfixrito/KappAIO/blob/master/KappaAIO%20Reborn/Plugins/Champions/Darius/Darius.cs#L341
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "DrawLoop2")
+				if self.XerathMenu.drawings.draw_r_damage_text:get() and unit.isOnScreen and rActive then
+					if not rDamage then
+						rDamage = 0
+						for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
+							local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot)
+							local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot)
+							if ((totalHP) - (rDamage + calculatedRMaxDamage))/unit.maxHealth < (ElderBuff and 0.2 or 0) then
+								rDamage = rDamage + calculatedRMaxDamage
+								shotsToKill = shotsToKill + 1
+								break
+							end
+							rDamage = rDamage + calculatedRDamage
+							shotsToKill = shotsToKill + 1
+							isFirstShot = false
+						end
+						if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
+							rDamage = totalHP
+						end
+					end
+					if rDamage > 0 then
+						local pos = vec2(unit.healthBarPosition.x + 70, unit.healthBarPosition.y - 30)
+						local hpPercent =  100-((totalHP - rDamage) / (unit.maxHealth + unit.allShield + unit.magicalShield))*100
+						local text = tostring(math.ceil(totalHP - rDamage) .. " (" .. tostring(math.floor(hpPercent)) .. "%)")
+						-- Inspired from https://github.com/plsfixrito/KappAIO/blob/master/KappaAIO%20Reborn/Plugins/Champions/Darius/Darius.cs#L341
 						local red = 51*math.min(100, hpPercent)/20
-					if rDamage >= totalHP then
-						table.insert(RKillable, {unit = unit, shots = shotsToKill})
-					else
-						table.insert(drawRValue, {unit = unit, text = text, red = red})
-					end
-				end
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "DrawLoop3")
-			if self.XerathMenu.drawings.draw_r_list:get() and not player.isDead and rActive and unit.pos:distance2D(player.pos) <= 5000 then
-				if not rDamage then
-					rDamage = 0
-					for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
-						local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot)
-						local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot)
-						if ((totalHP) - (rDamage + calculatedRMaxDamage))/unit.maxHealth < (ElderBuff and 0.2 or 0) then
-							rDamage = rDamage + calculatedRMaxDamage
-							shotsToKill = shotsToKill + 1
-							break
+						if rDamage >= totalHP then
+							table.insert(RKillable, {unit = unit, shots = shotsToKill})
+						else
+							table.insert(drawRValue, {unit = unit, text = text, red = red})
 						end
-						rDamage = rDamage + calculatedRDamage
-						shotsToKill = shotsToKill + 1
-						isFirstShot = false
-					end
-					if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
-						rDamage = totalHP
 					end
 				end
-				if rDamage >= totalHP then
-					table.insert(killList, unit.skinName .. " is killable in " .. shotsToKill .. (shotsToKill > 1 and " shots" or " shot"))
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "DrawLoop3")
+				if self.XerathMenu.drawings.draw_r_list:get() and not player.isDead and rActive and unit.pos:distance2D(player.pos) <= 5000 then
+					if not rDamage then
+						rDamage = 0
+						for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
+							local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot)
+							local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot)
+							if ((totalHP) - (rDamage + calculatedRMaxDamage))/unit.maxHealth < (ElderBuff and 0.2 or 0) then
+								rDamage = rDamage + calculatedRMaxDamage
+								shotsToKill = shotsToKill + 1
+								break
+							end
+							rDamage = rDamage + calculatedRDamage
+							shotsToKill = shotsToKill + 1
+							isFirstShot = false
+						end
+						if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
+							rDamage = totalHP
+						end
+					end
+					if rDamage >= totalHP then
+						table.insert(killList, unit.skinName .. " is killable in " .. shotsToKill .. (shotsToKill > 1 and " shots" or " shot"))
+					end
 				end
+				table.remove(debugList, #debugList)
+				::continue::
 			end
-			table.remove(debugList, #debugList)
-			::continue::
 		end
+		table.remove(debugList, #debugList)
+		table.remove(debugList, #debugList)
 	end
-	table.remove(debugList, #debugList)
-	table.remove(debugList, #debugList)
-	end
-	
-    function Xerath:Auto()
+
+	function Xerath:Auto()
 		table.insert(debugList, "Auto")
 		table.insert(debugList, "Auto1")
 		isUlting = rBuff
@@ -1063,13 +1063,13 @@ cb.add(cb.load, function()
 		local pingLatency = game.latency/1000
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
-        for index, enemy in pairs(targetList) do
+		for index, enemy in pairs(targetList) do
 			local stasisTime = self:getStasisTime(enemy)
 			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
-			
+
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
-			
+
 			table.insert(debugList, "AutoCalcs")
 			local dashing = enemy.path and enemy.path.isDashing
 			local CCTime = pred.getCrowdControlledTime(enemy)
@@ -1081,7 +1081,7 @@ cb.add(cb.load, function()
 			local needsUltCasted = manualR and isUlting
 			table.remove(debugList, #debugList)
 			if (CCTime <= 0 or not (CCE or CCW)) and (not channelingSpell or not (ChannelE or ChannelW)) and (not dashing or not (DashE or DashW or DashQ)) and (stasisTime <= 0 or not (StasisE or StasisW or StasisQ)) and (castTime <= 0 or not (CastingE or CastingW or CastingQ)) and not manualE and not needsUltCasted then goto continue end
-			
+
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
 			local noKillBuffTimeAuto = self:noKillBuffTime(enemy)
@@ -1090,12 +1090,12 @@ cb.add(cb.load, function()
 			local WDamage = self:GetDamageW2(enemy, 0)
 			local RDamage = self:GetDamageR(enemy, 0, 0, enemy.health, true)
 			local totalHP = (enemy.health + enemy.allShield + enemy.magicalShield)
-			local ELandingTime = ((player.pos:distance2D(enemy.pos) - (player.boundingRadius + enemy.boundingRadius)) / self.eData.speed + self.eData.delay)
+			local ELandingTime = (math.max(0, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius))) / self.eData.speed + self.eData.delay)
 			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield")
 			local canBeSlowed = canBeStunned and not enemy:getBuff("Highlander")
 			table.remove(debugList, #debugList)
 			if isUlting then goto ult end
-			
+
 			table.insert(debugList, "AutoEDash")
 			if DashE and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
 				self:CastE(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
@@ -1163,10 +1163,10 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "ManualE")
 			if self.XerathMenu.misc.w_before_e:get() and manualE and player:spellSlot(SpellSlot.W).state == 0 and enemy.pos:distance2D(player.pos) <= self.wData.range and orb.predictHP(enemy, 0.9 + pingLatency) > 0 and not enemy.isZombie and godBuffTimeAuto <= 0.9 + pingLatency and (noKillBuffTimeAuto <= 0.9 + pingLatency or WDamage < totalHP) and canBeSlowed then
-					self:CastW(enemy,"manual", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
-					onceOnly = true
-					table.remove(debugList, #debugList)
-					break
+				self:CastW(enemy,"manual", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				onceOnly = true
+				table.remove(debugList, #debugList)
+				break
 			end
 			if manualE and orb.predictHP(enemy, 0.2 + pingLatency) > 0 and not enemy.isZombie and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or EDamage < totalHP) and canBeStunned then
 				if CCTime or CCTime - pingLatency - 0.25 < ELandingTime then
@@ -1197,7 +1197,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			::continue::
-        end
+		end
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoParticleLoop")
 		local EParticle = (self.XerathMenu.misc.e_particle:get() and player:spellSlot(SpellSlot.E).state == 0)
@@ -1208,10 +1208,6 @@ cb.add(cb.load, function()
 				if not value or (value.time + value.castTime) <= game.time or (value.team and value.team == player.team) or value.isAlly then table.remove(particleCastList, key) goto nextParticle end
 				if not value.owner then
 					local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
-					if value.teleport then
-						particleOwner = value.owner
-						value.castingPos = value.target.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
-					end
 					if not particleOwner or not particleOwner.isHero or particleOwner.isAlly then
 						if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
 							particleOwner = particleOwner.asAttackableUnit.owner.asAIBase
@@ -1219,29 +1215,31 @@ cb.add(cb.load, function()
 							particleOwner = particleOwner.asMissile.caster.asAIBase
 						else
 							particleOwner = {
-							isEnemy = true,
-							boundingRadius = value.bounding,
-							characterIntermediate = {
-								moveSpeed = value.speed
-							},
-							homeless = true
+								isEnemy = true,
+								boundingRadius = value.bounding,
+								characterIntermediate = {
+									moveSpeed = value.speed
+								},
+								homeless = true
 							}
 							print("Homeless particle : " .. value.obj.name)
 						end
 					end
-					if particleOwner and particleOwner.isHero then
-						particleOwner = particleOwner.asAIBase
-						print("Owner found : " .. particleOwner.name)
-					end
 					value.owner = particleOwner
 				end
 				particleOwner = value.owner
+				if value.owner and value.owner.isHero then
+					particleOwner = particleOwner.asAIBase
+				end
+				if value.teleport then
+					value.castingPos = value.target.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
+				end
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
 				end
 				if not value.castingPos or player.pos:distance2D(value.castingPos) > 1500 or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
-				local ELandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay)
+				local ELandingTime = (math.max(0, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius))) / self.eData.speed + self.eData.delay)
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.qData.delay - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
@@ -1274,26 +1272,26 @@ cb.add(cb.load, function()
 			orb.setAttackPause(0.075)
 		end
 		table.remove(debugList, #debugList)
-    end
-	
-    -- This function will include all the logics for the combo mode
-    function Xerath:Combo()
+	end
+
+	-- This function will include all the logics for the combo mode
+	function Xerath:Combo()
 		if isUlting or hasCasted then return end
-		
-        if orb.isComboActive == false then return end
-		
+
+		if orb.isComboActive == false then return end
+
 		table.insert(debugList, "Combo")
 		for index, target in pairs(targetList) do
 			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
-			
+
 			table.insert(debugList, "ComboCalcs")
 			local CanUseQ = self.XerathMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.XerathMenu.combo.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.75 + game.latency/1000):distance2D(player.pos) <= 1000 or target.pos:distance2D(player.pos) <= 1000)
 			local CanUseE = self.XerathMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= self.eData.range
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE then goto continue end
-			
+
 			table.insert(debugList, "ComboCalcs2")
 			local CCTime = pred.getCrowdControlledTime(target)
 			local dashing = target.path and target.path.isDashing
@@ -1306,12 +1304,12 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local ELandingTime = ((player.pos:distance2D(target.pos) - (player.boundingRadius + target.boundingRadius)) / self.eData.speed + self.eData.delay)
+			local ELandingTime = (math.max(0, (player.pos:distance2D(target.pos) - (target.boundingRadius))) / self.eData.speed + self.eData.delay)
 			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			local chargingQ = qBuff
 			local shouldNotSwapTarget = false
 			table.remove(debugList, #debugList)
-			
+
 			table.insert(debugList, "ComboE")
 			if CanUseE and orb.predictHP(target, 0.2 + pingLatency) > 0 and godBuffTimeCombo <= 0.5 + pingLatency and (noKillBuffTimeCombo <= 0.5 + game.latency/1000 or not ((((totalHP) - EDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and canBeStunned then
 				-- Chain CC logic inspired by Hellsing Xerath https://github.com/Hellsing/EloBuddy-Addons/blob/master/Xerath/Modes/Combo.cs#L32
@@ -1344,24 +1342,24 @@ cb.add(cb.load, function()
 			::continue::
 		end
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    function Xerath:Harass()
+	function Xerath:Harass()
 		if isUlting or hasCasted then return end
-		
-        if orb.harassKeyDown == false then return end
-		
+
+		if orb.harassKeyDown == false then return end
+
 		table.insert(debugList, "Harass")
 		for index, target in pairs(targetList) do
 			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
-			
+
 			table.insert(debugList, "HarassCalcs")
 			local CanUseQ = self.XerathMenu.harass.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.XerathMenu.harass.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.75 + game.latency/1000):distance2D(player.pos) <= 1000 or target.pos:distance2D(player.pos) <= 1000)
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW then goto continue end
-			
+
 			table.insert(debugList, "HarassCalcs2")
 			local CCTime = pred.getCrowdControlledTime(target)
 			local dashing = target.path and target.path.isDashing
@@ -1378,7 +1376,7 @@ cb.add(cb.load, function()
 			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			local chargingQ = qBuff
 			table.remove(debugList, #debugList)
-			
+
 			table.insert(debugList, "HarassQ")
 			if CanUseQ and (target.path and pred.positionAfterTime(target, 0.55 + pingLatency):distance2D(player.pos) <= 750 or target.pos:distance2D(player.pos) <= 750) and not CanUseW and orb.predictHP(target, 0.45 + pingLatency) > 0 and godBuffTimeCombo <= 0.85 + pingLatency and (noKillBuffTimeCombo <= 0.85 + pingLatency or not ((((totalHP) - QDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and not chargingQ then
 				if self:CastQ(target,"harass", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, QDamage, totalHP, CCTime) > 0 then table.remove(debugList, #debugList) break end
@@ -1400,11 +1398,11 @@ cb.add(cb.load, function()
 			::continue::
 		end
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    -- This function will cast Q on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
-    function Xerath:CastQ(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, stunTime)
-        if hasCasted then return 0 end
+	-- This function will cast Q on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
+	function Xerath:CastQ(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, stunTime)
+		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		self.qData.delay = 0.55
 		self.qData.range = 750
@@ -1423,8 +1421,8 @@ cb.add(cb.load, function()
 		end
 		return p and p.hitChance or 0
 	end
-	
-    function Xerath:CastQ2(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, chargingQ, stunTime, canBeStunned)
+
+	function Xerath:CastQ2(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, chargingQ, stunTime, canBeStunned)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		local buff = chargingQ
@@ -1457,9 +1455,9 @@ cb.add(cb.load, function()
 		end
 		return p and p.hitChance or 0
 	end
-	
-    -- This function will cast W on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
-    function Xerath:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
+
+	-- This function will cast W on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
+	function Xerath:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		local w1 = pred.getPrediction(target, self.wData)
@@ -1473,9 +1471,9 @@ cb.add(cb.load, function()
 			hasCasted = true
 		end
 		return p and p.hitChance or 0
-    end
-	
-    function Xerath:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime)
+	end
+
+	function Xerath:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		local p = pred.getPrediction(target, self.eData)
@@ -1489,7 +1487,7 @@ cb.add(cb.load, function()
 		return p and p.hitChance or 0
 	end
 
-    function Xerath:CastR(target, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, prioCast, predResult)
+	function Xerath:CastR(target, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, prioCast, predResult)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		local p = predResult
@@ -1500,52 +1498,52 @@ cb.add(cb.load, function()
 			self:DebugPrint("Casted R")
 		end
 		return p and p.hitChance or 0
-    end
+	end
 
-    -- This function will be called every time the player draws a screen (based on FPS)
-    -- This is where all drawing code will be executed
-    function Xerath:OnDraw()
+	-- This function will be called every time the player draws a screen (based on FPS)
+	-- This is where all drawing code will be executed
+	function Xerath:OnDraw()
 		self:debugFlush()
 		table.insert(debugList, "Draw")
 		table.insert(debugList, "Draw1")
-        -- Check if the menu option is enabled to draw the Q range
-        if self.XerathMenu.drawings.draw_q_range:get() then
-            local alpha = player:spellSlot(SpellSlot.Q).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, self:GetTrueChargeRange(1500, 750, 1.5), 2, graphics.argb(alpha, 204, 127, 0))
+		-- Check if the menu option is enabled to draw the Q range
+		if self.XerathMenu.drawings.draw_q_range:get() then
+			local alpha = player:spellSlot(SpellSlot.Q).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, self:GetTrueChargeRange(1500, 750, 1.5), 2, graphics.argb(alpha, 204, 127, 0))
 			graphics.drawCircle(player.pos, 1500, 2, graphics.argb(alpha, 204, 127, 0))
-        end
-        -- Check if the menu option is enabled to draw the W range
-        if self.XerathMenu.drawings.draw_w_range:get() then
-            -- If its just 1 line like previous one to check if spell is ready, we can use this code aswell
-            -- It has the same effect if checks if the spell is ready, if it is it sets the value to 255, if not it sets it to 50
-            local alpha = player:spellSlot(SpellSlot.W).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, self.wData.range, 2, graphics.argb(alpha, 0, 255, 255))
-        end
-        if self.XerathMenu.drawings.draw_e_range:get() then
-            local alpha = player:spellSlot(SpellSlot.E).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, self.eData.range, 2, graphics.argb(alpha, 0, 127, 255))
-        end
-        if self.XerathMenu.drawings.draw_r_range:get() then
-            local alpha = player:spellSlot(SpellSlot.R).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, self.rData.range, 2, graphics.argb(alpha, 255, 127, 0))
-        end
-        if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
+		end
+		-- Check if the menu option is enabled to draw the W range
+		if self.XerathMenu.drawings.draw_w_range:get() then
+			-- If its just 1 line like previous one to check if spell is ready, we can use this code aswell
+			-- It has the same effect if checks if the spell is ready, if it is it sets the value to 255, if not it sets it to 50
+			local alpha = player:spellSlot(SpellSlot.W).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, self.wData.range, 2, graphics.argb(alpha, 0, 255, 255))
+		end
+		if self.XerathMenu.drawings.draw_e_range:get() then
+			local alpha = player:spellSlot(SpellSlot.E).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, self.eData.range, 2, graphics.argb(alpha, 0, 127, 255))
+		end
+		if self.XerathMenu.drawings.draw_r_range:get() then
+			local alpha = player:spellSlot(SpellSlot.R).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, self.rData.range, 2, graphics.argb(alpha, 255, 127, 0))
+		end
+		if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
 			if QTarget.isValid and not QTarget.isDead then
 				graphics.drawCircle(QTarget.pos, 100, 2, graphics.argb(255, 255, 127, 0))
 				graphics.drawCircle(QTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 127, 0))
 			end
-        end
-        if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
+		end
+		if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
 			if RTarget.isValid and not RTarget.isDead then
 				graphics.drawCircle(RTarget.pos, 100, 2, graphics.argb(255, 255, 0, 0))
 				graphics.drawCircle(RTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 0, 0))
 			end
-        end
-        if self.XerathMenu.drawings.draw_r_range_minimap:get() then
-            if player:spellSlot(SpellSlot.R).state == 0 or rBuff then
+		end
+		if self.XerathMenu.drawings.draw_r_range_minimap:get() then
+			if player:spellSlot(SpellSlot.R).state == 0 or rBuff then
 				graphics.drawCircleMinimap(player.pos, self.rData.range, 1, graphics.argb(255, 255, 127, 0))
 			end
-        end
+		end
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "DrawCalcsDraw")
 		for key,value in ipairs(drawRDamage) do
@@ -1598,15 +1596,15 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    -- This function will be called every time someone did cast a spell.
-    function Xerath:OnCastSpell(source, spell)
+	-- This function will be called every time someone did cast a spell.
+	function Xerath:OnCastSpell(source, spell)
 		self:debugFlush()
-        -- Compare the handler of the source to our player 
-        if source.handle == player.handle then
+		-- Compare the handler of the source to our player
+		if source.handle == player.handle then
 			table.insert(debugList, "CastSpell")
-            -- Store the time when the spell was casted, which will be used inside Annie:IsCasting()
+			-- Store the time when the spell was casted, which will be used inside Annie:IsCasting()
 			if spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5) <= 5 then
 				self.castTimeClock[spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5)] = game.time + self.castTime[spell.slot + (spell.name ~= "XerathArcanopulse2" and 1 or 5)]
 				self:DebugPrint("Casting spell: " .. spell.name)
@@ -1615,7 +1613,7 @@ cb.add(cb.load, function()
 				rshots = 2 + player:spellSlot(SpellSlot.R).level
 			end
 			table.remove(debugList, #debugList)
-        end
+		end
 		if not source or not source.isHero then return end
 		table.insert(debugList, "Exceptions")
 		if spell.name == "EvelynnR" and source.isAlly then
@@ -1635,9 +1633,9 @@ cb.add(cb.load, function()
 			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
-    end
-	
-    function Xerath:OnBasicAttack(source, spell)
+	end
+
+	function Xerath:OnBasicAttack(source, spell)
 		self:debugFlush()
 		if not source or not source.isHero then return end
 		table.insert(debugList, "SpellCast")
@@ -1655,30 +1653,30 @@ cb.add(cb.load, function()
 			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    -- This function will be executed inside OnTick and will prevent spamming the same spell as it gets casted.
-    -- While a spell is being casted (0.25 sec most of the time), the spell state stays the same.
-    function Xerath:IsCasting()
-        -- Get current time
-        local time = game.time
-        -- loop through all the spells
-        for index, value in ipairs(self.castTimeClock) do
-		-- Logic so casting is considered as finished for the server, your ping
-                if time - value < (index ~= 3 and -game.latency/1000 or 0.033) then
-                    return true
-                end
-        end
-        return false
-    end
+	-- This function will be executed inside OnTick and will prevent spamming the same spell as it gets casted.
+	-- While a spell is being casted (0.25 sec most of the time), the spell state stays the same.
+	function Xerath:IsCasting()
+		-- Get current time
+		local time = game.time
+		-- loop through all the spells
+		for index, value in ipairs(self.castTimeClock) do
+			-- Logic so casting is considered as finished for the server, your ping
+			if time - value < (index ~= 3 and -game.latency/1000 or 0.033) then
+				return true
+			end
+		end
+		return false
+	end
 
-    -- Call the initialization function
-    Xerath:__init()
+	-- Call the initialization function
+	Xerath:__init()
 
 end)
 
 -- This callback is called when the script gets unloaded.
 cb.add(cb.unload, function()
-    -- We delete the menu for our script, with the same name as we created it.
-    menu.delete('open_Xerath')
+	-- We delete the menu for our script, with the same name as we created it.
+	menu.delete('open_Xerath')
 end)

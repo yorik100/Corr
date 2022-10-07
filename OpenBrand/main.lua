@@ -17,25 +17,25 @@ local JSON = require("jsonLib")
 cb.add(cb.load, function()
 
 	if menu.delete('open_Brand') then return end
-    -- Check if the current champion is Annie. If not, don't load the script
-    if player.skinName ~= "Brand" then return end
+	-- Check if the current champion is Annie. If not, don't load the script
+	if player.skinName ~= "Brand" then return end
 	print("[OpenBrand] Open Brand loaded")
-	
+
 	local data = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/data.json"
 	local main = "https://raw.githubusercontent.com/yorik100/Corr/main/OpenBrand/main.lua"
 	local version = nil
 	local scriptName = "OpenBrand"
-    _G.net.getAsync(data, function(response)
-        if not response then
-            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: no response</font>")
-        end
+	_G.net.getAsync(data, function(response)
+		if not response then
+			return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: no response</font>")
+		end
 
-        if response.status ~= 200 then
-            return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: " .. response.status .. "</font>")
-        end
-        local json = JSON.decode(response.text)
+		if response.status ~= 200 then
+			return chat.showChat("<font color=\"#FF0000\">[" .. self.scriptName .. "]</font> <font color=\"#FFFFFF\">An error has occurred: " .. response.status .. "</font>")
+		end
+		local json = JSON.decode(response.text)
 
-        version = json["Version"]
+		version = json["Version"]
 		_G.net.autoUpdateDirect(data, main, function(success)
 			if success then
 				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Update completed successfully, please press F5 to refresh! (v" .. version .. ")</font>")
@@ -43,7 +43,7 @@ cb.add(cb.load, function()
 				chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Welcome " .. user.data.name .. ", " .. scriptName .." is up to date ! (v" .. version .. " or higher)</font>")
 			end
 		end)
-    end)
+	end)
 	fileList = fs.getFiles(fs.scriptPath .. scriptName)
 	local tempText = ""
 	local shouldPrint = false
@@ -66,12 +66,12 @@ cb.add(cb.load, function()
 		chat.showChat("<font color=\"#1E90FF\">[" .. scriptName .. "]</font> <font color=\"#FFFFFF\">Unused file(s) found in " .. scriptName .. " folder :" .. tempText)
 	end
 
-    -- Create a 'class/table' where all the functions will be stored
+	-- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
 	local buffToCheck = {"MorganaE", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf"}
 	local selfBuffToCheck = {"SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
-    local Brand = {}
+	local Brand = {}
 	local buffs = {}
 	local particleWList = {}
 	local particleGwenList = {}
@@ -88,74 +88,74 @@ cb.add(cb.load, function()
 	local allyREveCast = nil
 	local teleportOwner = nil
 
-    -- Creating a debug print function, so the developer can easily check the output and if someone
-    -- wants to play with the simple script can disable the debug prints in the console
-    function Brand:DebugPrint(...)
-        if not self.BrandMenu.debug_print:get() then return end
-        print("[OpenBrand] ".. ...)
-    end
+	-- Creating a debug print function, so the developer can easily check the output and if someone
+	-- wants to play with the simple script can disable the debug prints in the console
+	function Brand:DebugPrint(...)
+		if not self.BrandMenu.debug_print:get() then return end
+		print("[OpenBrand] ".. ...)
+	end
 
-    -- This will be our initialization function, we call it to load the script and all its variables and functions inside
-    function Brand:__init()
-	
+	-- This will be our initialization function, we call it to load the script and all its variables and functions inside
+	function Brand:__init()
+
 		self.castTime = {0.25,0.25,0.25,0.25}
 		self.castTimeClock = {0,0,0,0}
 
-        -- tables with spell data for prediction
-        self.qData = {
-            delay = 0.25,
-            speed = 1600,
-            range = 1100,
+		-- tables with spell data for prediction
+		self.qData = {
+			delay = 0.25,
+			speed = 1600,
+			range = 1100,
 			radius = 60,
 			collision = { -- if not defined -> no collision calcs
-				hero = SpellCollisionType.Hard, 
+				hero = SpellCollisionType.Hard,
 				-- Hard = Collides with object and stops on collision
-				minion = SpellCollisionType.Hard, 
+				minion = SpellCollisionType.Hard,
 				-- Soft = Collides with object and passes through them.
-				tower = SpellCollisionType.None, 
+				tower = SpellCollisionType.None,
 				-- None = Doesn't collide with object. Also default if not defined
-				extraRadius = 10, 
-				-- if not defined -> default = 0		
+				extraRadius = 10,
+				-- if not defined -> default = 0
 				-- if not defined -> default = CollisionFlags.None
 				flags = bit.bor(CollisionFlags.Windwall, CollisionFlags.Samira, CollisionFlags.Braum)
 			},
-            type = spellType.linear,
-            rangeType = 1,
-            boundingRadiusMod = true
-        }
+			type = spellType.linear,
+			rangeType = 1,
+			boundingRadiusMod = true
+		}
 		self.wData = {
-            delay = 0.875,
-            speed = math.huge,
-            range = 900,
+			delay = 0.875,
+			speed = math.huge,
+			range = 900,
 			radius = 260,
-            type = spellType.circular,
-            rangeType = 0,
-            boundingRadiusMod = true
-        }
-        self.rData = {
-            delay = 0,
-            speed = math.huge,
-            range = math.huge,
+			type = spellType.circular,
+			rangeType = 0,
+			boundingRadiusMod = true
+		}
+		self.rData = {
+			delay = 0,
+			speed = math.huge,
+			range = math.huge,
 			radius = 30,
 			collision = { -- if not defined -> no collision calcs
-				hero = SpellCollisionType.None, 
+				hero = SpellCollisionType.None,
 				-- Hard = Collides with object and stops on collision
-				minion = SpellCollisionType.None, 
+				minion = SpellCollisionType.None,
 				-- Soft = Collides with object and passes through them.
-				tower = SpellCollisionType.None, 
+				tower = SpellCollisionType.None,
 				-- None = Doesn't collide with object. Also default if not defined
-				extraRadius = 10, 
-				-- if not defined -> default = 0		
+				extraRadius = 10,
+				-- if not defined -> default = 0
 				-- if not defined -> default = CollisionFlags.None
 				flags = bit.bor(CollisionFlags.Windwall, CollisionFlags.Samira, CollisionFlags.Braum)
 			},
-            type = spellType.linear,
-            rangeType = 0,
-            boundingRadiusMod = false
-        }
+			type = spellType.linear,
+			rangeType = 0,
+			boundingRadiusMod = false
+		}
 
-        -- self.AnnieMenu will store all the menu data which got returned from the Annie:CreateMenu function
-        self.BrandMenu = self:CreateMenu()
+		-- self.AnnieMenu will store all the menu data which got returned from the Annie:CreateMenu function
+		self.BrandMenu = self:CreateMenu()
 		for _, hero in pairs(objManager.heroes.list) do
 			for _, buff in pairs(hero.buffs) do
 				if buff and buff.valid then
@@ -180,59 +180,59 @@ cb.add(cb.load, function()
 			end
 		end
 
-        -- Adding all callbacks that will be used in the script, the triple dots (...) means that the function will
-        -- take the return value of the function before it, so we can use it in our function
+		-- Adding all callbacks that will be used in the script, the triple dots (...) means that the function will
+		-- take the return value of the function before it, so we can use it in our function
 		cb.add(cb.tick,function(...) self:OnTick(...) end)
-        cb.add(cb.draw,function(...) self:OnDraw(...) end)
+		cb.add(cb.draw,function(...) self:OnDraw(...) end)
 		cb.add(cb.buff,function(...) self:OnBuff(...) end)
 		cb.add(cb.glow,function(...) self:OnGlow(...) end)
 		cb.add(cb.create,function(...) self:OnCreate(...) end)
 		cb.add(cb.delete,function(...) self:OnDelete(...) end)
-        cb.add(cb.processSpell,function(...) self:OnCastSpell(...) end)
+		cb.add(cb.processSpell,function(...) self:OnCastSpell(...) end)
 		cb.add(cb.basicAttack,function(...) self:OnBasicAttack(...) end)
-    end
+	end
 
-    -- This function will create the menu and return it to the Annie:__init function and store it in self.AnnieMenu
-    function Brand:CreateMenu()
-        -- Create the main menu
-        local mm = menu.create('open_Brand', 'OpenBrand')
-        -- Create a submenu inside the main menu
-        mm:header('combo', 'Combo Mode')
-        -- Create On/Off option inside the combo submenu
-        mm.combo:boolean('use_q', 'Use Q', true)
-        mm.combo:boolean('use_w', 'Use W', true)
-        mm.combo:boolean('use_e', 'Use E', true)
+	-- This function will create the menu and return it to the Annie:__init function and store it in self.AnnieMenu
+	function Brand:CreateMenu()
+		-- Create the main menu
+		local mm = menu.create('open_Brand', 'OpenBrand')
+		-- Create a submenu inside the main menu
+		mm:header('combo', 'Combo Mode')
+		-- Create On/Off option inside the combo submenu
+		mm.combo:boolean('use_q', 'Use Q', true)
+		mm.combo:boolean('use_w', 'Use W', true)
+		mm.combo:boolean('use_e', 'Use E', true)
 		mm.combo:boolean('use_r', 'Use R', true)
 		mm.combo:boolean('r_logic', 'Avoid wasting R', true)
 		mm.combo:boolean('use_r_minion', 'Use R on minion to kill with bounce', true)
 		mm.combo:slider('r_bounces', 'Min amount of R bounces to kill for combo R', 2, 0, 3, 1)
 		mm.combo:slider('r_aoe', 'Min amount of targets to combo R (AoE)', 2, 0, 5, 1)
-        -- Create slider option inside the combo submenu
-        -- mm.combo:slider('multi_r', 'Multi target R', 2, 3, 5, 1)
-        -- mm.combo:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
-        mm:header('harass', 'Harass Mode')
-        mm.harass:boolean('use_q', 'Use Q', false)
-        mm.harass:boolean('use_w', 'Use W', true)
-        mm.harass:boolean('use_e', 'Use E', true)        -- mm.harass:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
-        -- mm:header('killsteal', 'KillSteal')
-        -- mm.killsteal:boolean('use_r', 'Use R', true)
-        -- TODO
-        -- mm:header('lasthit', 'LastHit')
-        -- mm.lasthit:boolean('use_w', 'Use W', true)
-        -- mm:header('laneclear', 'LaneClear')
-        -- mm.laneclear:boolean('use_w', 'Use W', true)
-        -- mm:header('jungleclear', 'JungleClear')
-        -- mm.jungleclear:boolean('use_w', 'Use W', true)
-        mm:header('drawings', 'Drawings')
-        mm.drawings:boolean('draw_q_range', 'Draw Q Range', true)
-        mm.drawings:boolean('draw_w_range', 'Draw W Range', true)
-        mm.drawings:boolean('draw_e_range', 'Draw E Range', true)
+		-- Create slider option inside the combo submenu
+		-- mm.combo:slider('multi_r', 'Multi target R', 2, 3, 5, 1)
+		-- mm.combo:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
+		mm:header('harass', 'Harass Mode')
+		mm.harass:boolean('use_q', 'Use Q', false)
+		mm.harass:boolean('use_w', 'Use W', true)
+		mm.harass:boolean('use_e', 'Use E', true)        -- mm.harass:boolean('block_spells', 'Save spells for stun (E -> Q / W)', true)
+		-- mm:header('killsteal', 'KillSteal')
+		-- mm.killsteal:boolean('use_r', 'Use R', true)
+		-- TODO
+		-- mm:header('lasthit', 'LastHit')
+		-- mm.lasthit:boolean('use_w', 'Use W', true)
+		-- mm:header('laneclear', 'LaneClear')
+		-- mm.laneclear:boolean('use_w', 'Use W', true)
+		-- mm:header('jungleclear', 'JungleClear')
+		-- mm.jungleclear:boolean('use_w', 'Use W', true)
+		mm:header('drawings', 'Drawings')
+		mm.drawings:boolean('draw_q_range', 'Draw Q Range', true)
+		mm.drawings:boolean('draw_w_range', 'Draw W Range', true)
+		mm.drawings:boolean('draw_e_range', 'Draw E Range', true)
 		mm.drawings:boolean('draw_e_range_bounce', 'Draw E Range Bounce', true)
-        mm.drawings:boolean('draw_r_range', 'Draw R Range', true)
+		mm.drawings:boolean('draw_r_range', 'Draw R Range', true)
 		mm.drawings:boolean('draw_r_damage', 'Draw R Damage', true)
 		mm.drawings:boolean('draw_r_damage_text', 'Draw R Damage Text', true)
 		mm.drawings:boolean('draw_debug_w', 'Draw W Hitbox', true)
-        mm:header('misc', 'Misc')
+		mm:header('misc', 'Misc')
 		mm.misc:boolean('q_dash', 'Auto Q on dashes', true)
 		mm.misc:boolean('w_dash', 'Auto W on dashes', true)
 		mm.misc:boolean('q_channel', 'Auto Q on channels', true)
@@ -248,13 +248,13 @@ cb.add(cb.load, function()
 		mm:header('prediction', 'Hitchance')
 		mm.prediction:list('q_hitchance', 'Q Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 2)
 		mm.prediction:list('w_hitchance', 'W Hitchance', { 'Low', 'Medium', 'High', 'Very High', 'Undodgeable' }, 3)
-        -- Create On/Off option inside the main menu
-        mm:boolean('debug_print', 'Debug Print', true)
+		-- Create On/Off option inside the main menu
+		mm:boolean('debug_print', 'Debug Print', true)
 		mm:boolean('debug_print_buffs', 'Debug Print Buffs', false)
-        -- Return menu data
-        return mm
-    end
-	
+		-- Return menu data
+		return mm
+	end
+
 	-- Function to get a specific buff on an entity
 	local gameObject = _G.gameObject
 	function gameObject:getBuff(name)
@@ -270,23 +270,23 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 	end
-	
+
 	function Brand:debugFlush()
 		if debugList[1] then
 			local debugText = ""
-			for key,value in ipairs(debugList) do 
+			for key,value in ipairs(debugList) do
 				debugText = debugText .. " " .. value
 			end
 			print("[OpenDebug] Error found in" .. debugText)
 			debugList = {}
 		end
 	end
-	
+
 	function Brand:gwenWParticlePos(target)
 		local particle = particleGwenList[target.handle]
 		return particle.pos
 	end
-	
+
 	-- To know the remaining time of someone's invulnerable or spellshielded
 	function Brand:godBuffTime(target)
 		local buffTime = 0
@@ -296,13 +296,13 @@ cb.add(cb.load, function()
 			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) and (buff.name ~= "gwenwmissilecatcher" or player.pos:distance2D(self:gwenWParticlePos(target)) > 440) then
 				buffTime = buff.remainingTime
 				if buff.name == "PantheonE" then
-					buffTime = buffTime + 0.15 
+					buffTime = buffTime + 0.15
 				end
 			end
 		end
 		return buffTime
 	end
-	
+
 	function Brand:noKillBuffTime(target)
 		local buffTime = 0
 		local buffList = {"UndyingRage", "ChronoShift"}
@@ -314,7 +314,7 @@ cb.add(cb.load, function()
 		end
 		return buffTime
 	end
-	
+
 	function Brand:getStasisTime(target)
 		local buffTime = 0
 		local buffList = {"ChronoRevive", "BardRStasis", "ZhonyasRingShield", "LissandraRSelf"}
@@ -330,11 +330,11 @@ cb.add(cb.load, function()
 		end
 		return buffTime
 	end
-	
+
 	function Brand:invisibleValid(target, distance)
 		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags and target.isTargetable)
 	end
-	
+
 	function Brand:WillGetHitByW(target)
 		if not target then return false end
 		for key,value in ipairs(particleWList) do
@@ -345,15 +345,15 @@ cb.add(cb.load, function()
 		end
 		return false
 	end
-	
+
 	-- Thanks seidhr
 	function Brand:IsFacingPlayer(entity)
 		local skillshotDirection = (entity.pos - player.pos):normalized()
 		local direction = entity.direction
-        local facing = skillshotDirection:dot(direction)
+		local facing = skillshotDirection:dot(direction)
 		return facing < 0
 	end
-	
+
 	function Brand:GetExtraDamage(target, shots, predictedHealth, damageDealt, isCC, firstShot, isTargeted, passiveStacks)
 		local damage = 0
 		local buff3 = myHero:getBuff("ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua")
@@ -441,67 +441,67 @@ cb.add(cb.load, function()
 		-- print(damage)
 		return damage
 	end
-    -- Calculates the damage of a spell on a target, if spell is on cooldown it will return 0.
-    -- The time variable will be a buffer for the spell cooldown. ( If time is set to 0.5 it will ignore the cooldown of the spell if the cooldown is 0.5 seconds or less )
-    function Brand:GetDamageQ(target, time)
-        local spell = player:spellSlot(SpellSlot.Q)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 50 + spell.level * 30 + player.totalAbilityPower*0.55
+	-- Calculates the damage of a spell on a target, if spell is on cooldown it will return 0.
+	-- The time variable will be a buffer for the spell cooldown. ( If time is set to 0.5 it will ignore the cooldown of the spell if the cooldown is 0.5 seconds or less )
+	function Brand:GetDamageQ(target, time)
+		local spell = player:spellSlot(SpellSlot.Q)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 50 + spell.level * 30 + player.totalAbilityPower*0.55
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, false, true, false, 1)
-    end
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, false, true, false, 1)
+	end
 
-    function Brand:GetDamageW(target, time)
-        local spell = player:spellSlot(SpellSlot.W)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 30 + 45 * spell.level + player.totalAbilityPower*0.60
+	function Brand:GetDamageW(target, time)
+		local spell = player:spellSlot(SpellSlot.W)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 30 + 45 * spell.level + player.totalAbilityPower*0.60
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true, false, 1)
-    end
-	
-    function Brand:GetDamageW2(target, time)
-        local spell = player:spellSlot(SpellSlot.W)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = (30 + 45 * spell.level + player.totalAbilityPower*0.60)*1.25
-		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true, false, 1)
-    end
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true, false, 1)
+	end
 
-    function Brand:GetDamageE(target, time)
-        local spell = player:spellSlot(SpellSlot.E)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 45 + 25 * spell.level + player.totalAbilityPower*0.45
+	function Brand:GetDamageW2(target, time)
+		local spell = player:spellSlot(SpellSlot.W)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = (30 + 45 * spell.level + player.totalAbilityPower*0.60)*1.25
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true, true, 1)
-    end
-	
-    function Brand:GetDamageR(target, time, shots, predictedHealth, firstShot, passiveStacks)
-        local spell = player:spellSlot(SpellSlot.R)
-        if spell.level == 0 then return 0 end
-        local time = time or 0
-        if spell.state ~= 0 and spell.cooldown > time then return 0 end
-        local damage = 100 * spell.level + player.totalAbilityPower*0.25
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true, false, 1)
+	end
+
+	function Brand:GetDamageE(target, time)
+		local spell = player:spellSlot(SpellSlot.E)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 45 + 25 * spell.level + player.totalAbilityPower*0.45
 		local damageLibDamage = damageLib.magical(player, target, damage)
-        return damageLibDamage + self:GetExtraDamage(target, shots, predictedHealth, damageLibDamage, false, firstShot, true, passiveStacks)
-    end
-	
+		return damageLibDamage + self:GetExtraDamage(target, 0, target.health, damageLibDamage, true, true, true, 1)
+	end
+
+	function Brand:GetDamageR(target, time, shots, predictedHealth, firstShot, passiveStacks)
+		local spell = player:spellSlot(SpellSlot.R)
+		if spell.level == 0 then return 0 end
+		local time = time or 0
+		if spell.state ~= 0 and spell.cooldown > time then return 0 end
+		local damage = 100 * spell.level + player.totalAbilityPower*0.25
+		local damageLibDamage = damageLib.magical(player, target, damage)
+		return damageLibDamage + self:GetExtraDamage(target, shots, predictedHealth, damageLibDamage, false, firstShot, true, passiveStacks)
+	end
+
 	function Brand:OnGlow()
 		self:debugFlush()
 		table.insert(debugList, "Glow")
 		table.remove(debugList, #debugList)
 	end
-	
+
 	function Brand:OnCreate(object)
 		table.insert(debugList, "Create")
-		
+
 		if string.find(object.name, "_POF_tar_green") and string.find(object.name, "Brand_") then
 			table.insert(particleWList, {obj = object, time = game.time})
 			self:DebugPrint("Added particle W")
@@ -530,14 +530,14 @@ cb.add(cb.load, function()
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object then
-            owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
-            target = object.asEffectEmitter.targetAttachment.object
+			owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
+			target = object.asEffectEmitter.targetAttachment.object
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_red.troy" and object.isEffectEmitter then
-            teleportOwner = object.asEffectEmitter.attachment.object
+			teleportOwner = object.asEffectEmitter.attachment.object
 		elseif object.name == "global_ss_teleport_turret_red.troy" and object.isEffectEmitter then
-            target = object.asEffectEmitter.attachment.object
+			target = object.asEffectEmitter.attachment.object
 			local nexusPos = nil
 			for key, value in pairs(objManager.buildings.enemies.list) do
 				if value.isNexus then
@@ -548,7 +548,7 @@ cb.add(cb.load, function()
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 4.1, owner = teleportOwner, target = target, castingPos = nil, nexusPos = nexusPos, teleport = true})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_target_red.troy" and object.isEffectEmitter then
-            target = object.asEffectEmitter.targetAttachment.object
+			target = object.asEffectEmitter.targetAttachment.object
 			for key, value in pairs(objManager.buildings.enemies.list) do
 				if value.isNexus then
 					nexusPos = value.pos
@@ -561,7 +561,7 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 		-- print(object.name)
 	end
-	
+
 	function Brand:OnDelete(object)
 		self:debugFlush()
 		table.insert(debugList, "Delete")
@@ -592,17 +592,17 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 	end
-	
+
 	-- Seems more optimal to make a buff list like that, I guess, I was told so
-    function Brand:OnBuff(source, buff, gained)
+	function Brand:OnBuff(source, buff, gained)
 		self:debugFlush()
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
 		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
-				buffs["Time" .. source.handle] = game.time + 4
-				self:DebugPrint("Detected Guardian angel on " .. source.skinName)
+			buffs["Time" .. source.handle] = game.time + 4
+			self:DebugPrint("Detected Guardian angel on " .. source.skinName)
 		end
-		if self.BrandMenu.debug_print_buffs:get() then	
+		if self.BrandMenu.debug_print_buffs:get() then
 			self:DebugPrint(source.skinName .. " -> Buff " .. (gained and "gained" or "lost") .. " : (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		end
 		local buffFlag = false
@@ -631,14 +631,14 @@ cb.add(cb.load, function()
 			self:DebugPrint(source.skinName .. " -> Buff removed (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
 		end
 		table.remove(debugList, #debugList)
-    end
+	end
 
 	function Brand:OnTick()
 		self:debugFlush()
 		table.insert(debugList, "Tick")
 		hasCasted = false
 		self:DrawCalcs()
-        if player.isDead then table.remove(debugList, #debugList) return end
+		if player.isDead then table.remove(debugList, #debugList) return end
 		local stunBuffList = {BuffType.Stun, BuffType.Silence, BuffType.Taunt, BuffType.Polymorph, BuffType.Fear, BuffType.Charm, BuffType.Suppression, BuffType.Knockup, BuffType.Knockback, BuffType.Asleep}
 		for key,buff in ipairs(stunBuffList) do
 			if player:hasBuffOfType(buff) then
@@ -651,60 +651,38 @@ cb.add(cb.load, function()
 			table.remove(debugList, #debugList)
 			return
 		end
-        self:Combo()
-        self:Harass()
+		self:Combo()
+		self:Harass()
 		self:Auto()
 		table.remove(debugList, #debugList)
-    end
-	
+	end
+
 	function Brand:DrawCalcs()
-	table.insert(debugList, "DrawCalcs")
-	ElderBuff = myHero:getBuff("ElderDragonBuff")
-	table.insert(debugList, "DrawLoop")
-	drawRDamage = {}
-	RKillable = {}
-	drawRValue = {}
-	drawETargets = {}
-	for _, unit in pairs(ts.getTargets()) do
-		if unit.isHealthBarVisible and not unit.isDead and unit.isOnScreen then
-			if unit.skinName == "Yuumi" then
-				local YuumiBuff = unit:getBuff("YuumiWAttach")
-				if YuumiBuff and YuumiBuff.caster.handle == unit.handle then goto continue end
-			end
-			table.insert(debugList, "DrawLoop1")
-			-- Draw R damage on every enemies HP bars
-			local rDamage = nil
-			local shotsToKill = 0
-			local isFirstShot = true
-			local totalHP = unit.health + unit.allShield + unit.magicalShield
-			local rActive = player:spellSlot(SpellSlot.R).level ~= 0 and player:spellSlot(SpellSlot.R).cooldown <= 0
-			if self.BrandMenu.drawings.draw_r_damage:get() and rActive then
-				rDamage = 0
-				for i = 3 - 1, 0, -1 do
-					local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot, shotsToKill + 1)
-					local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot, shotsToKill + 1)
-					if ((totalHP) - (rDamage + calculatedRMaxDamage))/unit.maxHealth < (ElderBuff and 0.2 or 0) then
-						rDamage = rDamage + calculatedRMaxDamage
-						shotsToKill = shotsToKill + 1
-						break
-					end
-					rDamage = rDamage + calculatedRDamage
-					shotsToKill = shotsToKill + 1
-					isFirstShot = false
+		table.insert(debugList, "DrawCalcs")
+		ElderBuff = myHero:getBuff("ElderDragonBuff")
+		table.insert(debugList, "DrawLoop")
+		drawRDamage = {}
+		RKillable = {}
+		drawRValue = {}
+		drawETargets = {}
+		for _, unit in pairs(ts.getTargets()) do
+			if unit.isHealthBarVisible and not unit.isDead and unit.isOnScreen then
+				if unit.skinName == "Yuumi" then
+					local YuumiBuff = unit:getBuff("YuumiWAttach")
+					if YuumiBuff and YuumiBuff.caster.handle == unit.handle then goto continue end
 				end
-				if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
-					rDamage = totalHP
-				end
-				table.insert(drawRDamage, {unit = unit, damage = rDamage})
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "DrawLoop2")
-			if self.BrandMenu.drawings.draw_r_damage_text:get() and rActive then
-				if not rDamage then
+				table.insert(debugList, "DrawLoop1")
+				-- Draw R damage on every enemies HP bars
+				local rDamage = nil
+				local shotsToKill = 0
+				local isFirstShot = true
+				local totalHP = unit.health + unit.allShield + unit.magicalShield
+				local rActive = player:spellSlot(SpellSlot.R).level ~= 0 and player:spellSlot(SpellSlot.R).cooldown <= 0
+				if self.BrandMenu.drawings.draw_r_damage:get() and rActive then
 					rDamage = 0
 					for i = 3 - 1, 0, -1 do
-					local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot, shotsToKill + 1)
-					local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot, shotsToKill + 1)
+						local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot, shotsToKill + 1)
+						local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot, shotsToKill + 1)
 						if ((totalHP) - (rDamage + calculatedRMaxDamage))/unit.maxHealth < (ElderBuff and 0.2 or 0) then
 							rDamage = rDamage + calculatedRMaxDamage
 							shotsToKill = shotsToKill + 1
@@ -717,50 +695,72 @@ cb.add(cb.load, function()
 					if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
 						rDamage = totalHP
 					end
+					table.insert(drawRDamage, {unit = unit, damage = rDamage})
 				end
-				if rDamage > 0 then
-					local hpPercent =  100-((totalHP - rDamage) / (unit.maxHealth + unit.allShield + unit.magicalShield))*100
-					local text = tostring(math.ceil(totalHP - rDamage) .. " (" .. tostring(math.floor(hpPercent)) .. "%)")
-					-- Inspired from https://github.com/plsfixrito/KappAIO/blob/master/KappaAIO%20Reborn/Plugins/Champions/Darius/Darius.cs#L341
-						local red = 51*math.min(100, hpPercent)/20
-					if rDamage >= totalHP then
-						table.insert(RKillable, {unit = unit, shots = shotsToKill})
-					else
-						table.insert(drawRValue, {unit = unit, text = text, red = red})
-					end
-				end
-			end
-			table.insert(debugList, "DrawELoop")
-			if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
-				for _, minion in pairs(objManager.aiBases.list) do
-					table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags and minion.isTargetable
-					if not validTarget then goto continue1 end
-					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and target.isTargetable and minion.handle ~= target.handle
-						if not validTarget then goto continue2 end
-						local BrandABlaze = minion.asAIBase:findBuff("BrandAblaze")
-						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
-						local minionAI = minion.asAIBase
-						if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
-							table.insert(drawETargets, {unit = minion, totalERange = totalRange})
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "DrawLoop2")
+				if self.BrandMenu.drawings.draw_r_damage_text:get() and rActive then
+					if not rDamage then
+						rDamage = 0
+						for i = 3 - 1, 0, -1 do
+							local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot, shotsToKill + 1)
+							local calculatedRMaxDamage = self:GetDamageR(unit, 0, 0, totalHP - rDamage, isFirstShot, shotsToKill + 1)
+							if ((totalHP) - (rDamage + calculatedRMaxDamage))/unit.maxHealth < (ElderBuff and 0.2 or 0) then
+								rDamage = rDamage + calculatedRMaxDamage
+								shotsToKill = shotsToKill + 1
+								break
+							end
+							rDamage = rDamage + calculatedRDamage
+							shotsToKill = shotsToKill + 1
+							isFirstShot = false
 						end
-						::continue2::
+						if ((totalHP) - rDamage)/unit.maxHealth < 0.2 and ElderBuff then
+							rDamage = totalHP
+						end
 					end
-					::continue1::
-					table.remove(debugList, #debugList)
+					if rDamage > 0 then
+						local hpPercent =  100-((totalHP - rDamage) / (unit.maxHealth + unit.allShield + unit.magicalShield))*100
+						local text = tostring(math.ceil(totalHP - rDamage) .. " (" .. tostring(math.floor(hpPercent)) .. "%)")
+						-- Inspired from https://github.com/plsfixrito/KappAIO/blob/master/KappaAIO%20Reborn/Plugins/Champions/Darius/Darius.cs#L341
+						local red = 51*math.min(100, hpPercent)/20
+						if rDamage >= totalHP then
+							table.insert(RKillable, {unit = unit, shots = shotsToKill})
+						else
+							table.insert(drawRValue, {unit = unit, text = text, red = red})
+						end
+					end
 				end
+				table.insert(debugList, "DrawELoop")
+				if self.BrandMenu.drawings.draw_e_range_bounce:get() and player:spellSlot(SpellSlot.E).state == 0 then
+					for _, minion in pairs(objManager.aiBases.list) do
+						table.insert(debugList, "DrawELoop1 " .. (minion.name and tostring(minion.name) or ""))
+						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags and minion.isTargetable
+						if not validTarget then goto continue1 end
+						for index, target in pairs(ts.getTargets()) do
+							local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and target.isTargetable and minion.handle ~= target.handle
+							if not validTarget then goto continue2 end
+							local BrandABlaze = minion.asAIBase:findBuff("BrandAblaze")
+							local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
+							local minionAI = minion.asAIBase
+							if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
+								table.insert(drawETargets, {unit = minion, totalERange = totalRange})
+							end
+							::continue2::
+						end
+						::continue1::
+						table.remove(debugList, #debugList)
+					end
+				end
+				table.remove(debugList, #debugList)
+				table.remove(debugList, #debugList)
+				::continue::
 			end
-			table.remove(debugList, #debugList)
-			table.remove(debugList, #debugList)
-			::continue::
 		end
+		table.remove(debugList, #debugList)
+		table.remove(debugList, #debugList)
 	end
-	table.remove(debugList, #debugList)
-	table.remove(debugList, #debugList)
-	end
-	
-    function Brand:Auto()
+
+	function Brand:Auto()
 		table.insert(debugList, "Auto")
 		table.insert(debugList, "Auto1")
 		local onceOnly = false
@@ -777,13 +777,13 @@ cb.add(cb.load, function()
 		local pingLatency = game.latency/1000
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
-        for index, enemy in pairs(ts.getTargets()) do
+		for index, enemy in pairs(ts.getTargets()) do
 			local stasisTime = self:getStasisTime(enemy)
 			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
-			
+
 			if enemy.characterState.statusFlags ~= 65537 then buffs["Time" .. enemy.handle] = nil end
-			
+
 			table.insert(debugList, "AutoCalcs")
 			local dashing = enemy.path and enemy.path.isDashing
 			local CCTime = pred.getCrowdControlledTime(enemy)
@@ -791,7 +791,7 @@ cb.add(cb.load, function()
 			local castTime = (enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle]) and (casting[enemy.handle] - game.time) or 0
 			table.remove(debugList, #debugList)
 			if (CCTime <= 0 or not (CCQ or CCW)) and (not channelingSpell or not (ChannelQ or ChannelW)) and (not dashing or not (DashQ or DashW)) and (stasisTime <= 0 or not (StasisQ or StasisW)) and (castTime <= 0 or not (CastingQ or CastingW)) then goto continue end
-			
+
 			table.insert(debugList, "AutoCalcs2")
 			local godBuffTimeAuto = self:godBuffTime(enemy)
 			local noKillBuffTimeAuto = self:noKillBuffTime(enemy)
@@ -801,10 +801,10 @@ cb.add(cb.load, function()
 			local totalHP = (enemy.health + enemy.allShield + enemy.magicalShield)
 			local Ablaze = enemy.asAIBase:findBuff("BrandAblaze")
 			local WHit = self:WillGetHitByW(enemy)
-			local QLandingTime = ((player.pos:distance2D(enemy.pos) - (player.boundingRadius + enemy.boundingRadius)) / self.qData.speed + self.qData.delay)
+			local QLandingTime = (math.max(0, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius))) / self.qData.speed + self.qData.delay)
 			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield")
 			table.remove(debugList, #debugList)
-			
+
 			table.insert(debugList, "AutoQDash")
 			if DashQ and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				if Ablaze or WHit then
@@ -872,7 +872,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			::continue::
-        end
+		end
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoParticleLoop")
 		local QParticle = (self.BrandMenu.misc.q_particle:get() and player:spellSlot(SpellSlot.Q).state == 0)
@@ -882,10 +882,6 @@ cb.add(cb.load, function()
 				if not value or (value.time + value.castTime) <= game.time or (value.team and value.team == player.team) or value.isAlly then table.remove(particleCastList, key) goto nextParticle end
 				if not value.owner then
 					local particleOwner = (value.obj.asEffectEmitter.attachment.object and value.obj.asEffectEmitter.attachment.object.isAIBase and value.obj.asEffectEmitter.attachment.object.isEnemy) and value.obj.asEffectEmitter.attachment.object or ((value.obj.asEffectEmitter.targetAttachment.object and value.obj.asEffectEmitter.targetAttachment.object.isAIBase and value.obj.asEffectEmitter.targetAttachment.object.isEnemy) and value.obj.asEffectEmitter.targetAttachment.object or nil)
-					if value.teleport then
-						particleOwner = value.owner
-						value.castingPos = value.target.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
-					end
 					if not particleOwner or not particleOwner.isHero or particleOwner.isAlly then
 						if particleOwner and particleOwner.isAttackableUnit and particleOwner.asAttackableUnit.owner and particleOwner.asAttackableUnit.owner.isHero and particleOwner.asAttackableUnit.owner.isEnemy then
 							particleOwner = particleOwner.asAttackableUnit.owner.asAIBase
@@ -893,29 +889,31 @@ cb.add(cb.load, function()
 							particleOwner = particleOwner.asMissile.caster.asAIBase
 						else
 							particleOwner = {
-							isEnemy = true,
-							boundingRadius = value.bounding,
-							characterIntermediate = {
-								moveSpeed = value.speed
-							},
-							homeless = true
+								isEnemy = true,
+								boundingRadius = value.bounding,
+								characterIntermediate = {
+									moveSpeed = value.speed
+								},
+								homeless = true
 							}
 							print("Homeless particle : " .. value.obj.name)
 						end
 					end
-					if particleOwner and particleOwner.isHero then
-						particleOwner = particleOwner.asAIBase
-						print("Owner found : " .. particleOwner.name)
-					end
 					value.owner = particleOwner
 				end
 				particleOwner = value.owner
+				if value.owner and value.owner.isHero then
+					particleOwner = particleOwner.asAIBase
+				end
+				if value.teleport then
+					value.castingPos = value.target.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
+				end
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
 				end
 				if not value.castingPos or player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
-				local QLandingTime = ((player.pos:distance2D(value.castingPos) - (player.boundingRadius + particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay)
+				local QLandingTime = (math.max(0, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius))) / self.qData.speed + self.qData.delay)
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				local canQ = QParticle and not QCanDodge and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
@@ -934,20 +932,20 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
-    end
-	
-    -- This function will include all the logics for the combo mode
-    function Brand:Combo()
+	end
+
+	-- This function will include all the logics for the combo mode
+	function Brand:Combo()
 		if hasCasted then return end
-		
-        if orb.isComboActive == false then return end
-		
+
+		if orb.isComboActive == false then return end
+
 		table.insert(debugList, "Combo")
 		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
 			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
-			
+
 			table.insert(debugList, "ComboCalcs")
 			local CanUseQ = self.BrandMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.BrandMenu.combo.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
@@ -956,7 +954,7 @@ cb.add(cb.load, function()
 			if self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 then orb.setAttackPause(0.075) end
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE and not CanUseR then goto continue end
-			
+
 			table.insert(debugList, "ComboRCalcs")
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local rKills = false
@@ -972,7 +970,7 @@ cb.add(cb.load, function()
 						local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.handle ~= target.handle and minion:isValidTarget(600, true, target.pos) and minion.isTargetableToTeamFlags and minion.isTargetable
 						local enemyPos = target.path and pred.positionAfterTime(target, 0.6 + game.latency/1000) or target.pos
 						local minionAI = minion.asAIBase
-						if not validTarget or (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(enemyPos) > 600 then goto continue2 end          
+						if not validTarget or (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(enemyPos) > 600 then goto continue2 end
 						rCanBounce = true
 						break
 						::continue2::
@@ -1008,7 +1006,7 @@ cb.add(cb.load, function()
 				end
 			end
 			table.remove(debugList, #debugList)
-			
+
 			table.insert(debugList, "ComboCalcs2")
 			local CCTime = pred.getCrowdControlledTime(target)
 			local dashing = target.path and target.path.isDashing
@@ -1019,10 +1017,10 @@ cb.add(cb.load, function()
 			local WDamage = self:GetDamageW2(target, 0)
 			local RDamage = rTotalDamage
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local QLandingTime = ((player.pos:distance2D(target.pos) - (player.boundingRadius + target.boundingRadius)) / self.qData.speed + self.qData.delay)
+			local QLandingTime = (math.max(0, (player.pos:distance2D(target.pos) - (target.boundingRadius))) / self.qData.speed + self.qData.delay)
 			-- local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			table.remove(debugList, #debugList)
-			
+
 			table.insert(debugList, "ComboE")
 			if CanUseE and orb.predictHP(target, 0.2 + pingLatency) > 0 and godBuffTimeCombo <= 0.5 + pingLatency and (noKillBuffTimeCombo <= 0.5 + game.latency/1000 or not ((((totalHP) - EDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				self:CastE(target,"combo", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, EDamage, totalHP, CCTime, target)
@@ -1055,28 +1053,28 @@ cb.add(cb.load, function()
 			local chosenChamp = nil
 			local chosenMinion = nil
 			local distanceChamp = nil
-				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags and minion.isTargetable
-					if not validTarget then goto continue4 end
-					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and target.isTargetable and minion.handle ~= target.handle
-						if not validTarget then goto continue5 end
-						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
-						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
-						local minionAI = minion.asAIBase
-						if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
-							local distanceToChamp = minion.pos:distance2D(target.pos)
-							if not priority or not distanceChamp or index < priority or (index == priority and distanceChamp > distanceToChamp) then
-								distanceChamp = distanceToChamp
-								priority = index
-								chosenChamp = target
-								chosenMinion = minion
-							end
+			for _, minion in pairs(objManager.aiBases.list) do
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags and minion.isTargetable
+				if not validTarget then goto continue4 end
+				for index, target in pairs(ts.getTargets()) do
+					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and target.isTargetable and minion.handle ~= target.handle
+					if not validTarget then goto continue5 end
+					local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
+					local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
+					local minionAI = minion.asAIBase
+					if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
+						local distanceToChamp = minion.pos:distance2D(target.pos)
+						if not priority or not distanceChamp or index < priority or (index == priority and distanceChamp > distanceToChamp) then
+							distanceChamp = distanceToChamp
+							priority = index
+							chosenChamp = target
+							chosenMinion = minion
 						end
-						::continue5::
 					end
-					::continue4::
+					::continue5::
 				end
+				::continue4::
+			end
 			if priority and chosenChamp and chosenMinion then
 				self:CastE(chosenMinion,"combo minion", self:godBuffTime(chosenChamp), game.latency/1000, self:noKillBuffTime(chosenChamp), self:GetDamageE(chosenChamp, 0), (chosenChamp.health + chosenChamp.allShield + chosenChamp.magicalShield), pred.getCrowdControlledTime(chosenChamp), chosenChamp)
 			end
@@ -1138,18 +1136,18 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    function Brand:Harass()
+	function Brand:Harass()
 		if hasCasted then return end
-		
-        if orb.harassKeyDown == false then return end
-		
+
+		if orb.harassKeyDown == false then return end
+
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
 			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
-			
+
 			table.insert(debugList, "HarassCalcs")
 			local CanUseQ = self.BrandMenu.harass.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.BrandMenu.harass.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
@@ -1157,7 +1155,7 @@ cb.add(cb.load, function()
 			if self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 then orb.setAttackPause(0.075) end
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE then goto continue end
-			
+
 			table.insert(debugList, "HarassCalcs2")
 			local CCTime = pred.getCrowdControlledTime(target)
 			local dashing = target.path and target.path.isDashing
@@ -1170,10 +1168,10 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(target, 0, 0, target.health, true, 1)
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local QLandingTime = ((player.pos:distance2D(target.pos) - (player.boundingRadius + target.boundingRadius)) / self.qData.speed + self.qData.delay)
+			local QLandingTime = (math.max(0, (player.pos:distance2D(target.pos) - (target.boundingRadius))) / self.qData.speed + self.qData.delay)
 			-- local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			table.remove(debugList, #debugList)
-			
+
 			table.insert(debugList, "HarassE")
 			if CanUseE and orb.predictHP(target, 0.2 + pingLatency) > 0 and godBuffTimeCombo <= 0.5 + pingLatency and (noKillBuffTimeCombo <= 0.5 + game.latency/1000 or not ((((totalHP) - EDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				self:CastE(target,"harass", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, EDamage, totalHP, CCTime, realTarget)
@@ -1199,39 +1197,39 @@ cb.add(cb.load, function()
 			local chosenChamp = nil
 			local chosenMinion = nil
 			local distanceChamp = nil
-				for _, minion in pairs(objManager.aiBases.list) do
-					local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags and minion.isTargetable
-					if not validTarget then goto continue4 end
-					for index, target in pairs(ts.getTargets()) do
-						local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and target.isTargetable and minion.handle ~= target.handle
-						if not validTarget then goto continue5 end
-						local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
-						local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
-						local minionAI = minion.asAIBase
-						if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
-							local distanceToChamp = minion.pos:distance2D(target.pos)
-							if not priority or not distanceChamp or index < priority or (index == priority and distanceChamp > distanceToChamp) then
-								distanceChamp = distanceToChamp
-								priority = index
-								chosenChamp = target
-								chosenMinion = minion
-							end
+			for _, minion in pairs(objManager.aiBases.list) do
+				local validTarget =  minion and minion.isValid and minion.name ~= "Barrel" and minion.name ~= "GameObject" and (minion.isMinion or minion.isPet or minion.isHero) and not minion.isPlant and minion.pos and minion:isValidTarget(660, true, player.pos) and minion.isTargetableToTeamFlags and minion.isTargetable
+				if not validTarget then goto continue4 end
+				for index, target in pairs(ts.getTargets()) do
+					local validTarget =  target and target:isValidTarget(600, true, minion.pos) and target.isTargetableToTeamFlags and target.isTargetable and minion.handle ~= target.handle
+					if not validTarget then goto continue5 end
+					local BrandABlaze = minion.asAIBase.asAIBase:findBuff("BrandAblaze")
+					local totalRange = (BrandABlaze and BrandABlaze.remainingTime >= 0.25 + game.latency/1000) and 600 or 300
+					local minionAI = minion.asAIBase
+					if minion.pos:distance2D(target.pos) <= totalRange and (minionAI.path and pred.positionAfterTime(minionAI, 0.25 + game.latency/1000) or minionAI.pos):distance2D(target.path and pred.positionAfterTime(target, 0.25 + game.latency/1000) or target.pos) <= totalRange then
+						local distanceToChamp = minion.pos:distance2D(target.pos)
+						if not priority or not distanceChamp or index < priority or (index == priority and distanceChamp > distanceToChamp) then
+							distanceChamp = distanceToChamp
+							priority = index
+							chosenChamp = target
+							chosenMinion = minion
 						end
-						::continue5::
 					end
-					::continue4::
+					::continue5::
 				end
+				::continue4::
+			end
 			if priority and chosenChamp and chosenMinion then
 				self:CastE(chosenMinion,"harass minion", self:godBuffTime(chosenChamp), game.latency/1000, self:noKillBuffTime(chosenChamp), self:GetDamageE(chosenChamp, 0), (chosenChamp.health + chosenChamp.allShield + chosenChamp.magicalShield), pred.getCrowdControlledTime(chosenChamp), chosenChamp)
 			end
 		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    -- This function will cast Q on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
-	
-    function Brand:CastQ(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, stunTime)
+	-- This function will cast Q on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
+
+	function Brand:CastQ(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageQ, totalHP, stunTime)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
@@ -1249,9 +1247,9 @@ cb.add(cb.load, function()
 		end
 		return p and p.hitChance or 0
 	end
-	
-    -- This function will cast W on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
-    function Brand:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
+
+	-- This function will cast W on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
+	function Brand:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		local p = pred.getPrediction(target, self.wData)
@@ -1262,9 +1260,9 @@ cb.add(cb.load, function()
 			self:DebugPrint("Casted W on " .. mode)
 		end
 		return p and p.hitChance or 0
-    end
-	
-    function Brand:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime, realTarget)
+	end
+
+	function Brand:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime, realTarget)
 		if hasCasted then return end
 		if not totalHP then totalHP = 0 end
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/realTarget.maxHealth) < (ElderBuff and 0.2 or 0))) then
@@ -1274,7 +1272,7 @@ cb.add(cb.load, function()
 		end
 	end
 
-    function Brand:CastR(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, realTarget)
+	function Brand:CastR(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageR, totalHP, stunTime, realTarget)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		p = pred.getPrediction(target.asAIBase, self.rData)
@@ -1284,34 +1282,34 @@ cb.add(cb.load, function()
 			self:DebugPrint("Casted R on " .. mode)
 		end
 		return p and p.hitChance or 0
-    end
+	end
 
-    -- This function will be called every time the player draws a screen (based on FPS)
-    -- This is where all drawing code will be executed
-    function Brand:OnDraw()
+	-- This function will be called every time the player draws a screen (based on FPS)
+	-- This is where all drawing code will be executed
+	function Brand:OnDraw()
 		self:debugFlush()
 		table.insert(debugList, "Draw")
 		table.insert(debugList, "Draw1")
-        -- Check if the menu option is enabled to draw the Q range
-        if self.BrandMenu.drawings.draw_q_range:get() then
-            local alpha = player:spellSlot(SpellSlot.Q).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, self.qData.range, 2, graphics.argb(alpha, 204, 127, 0))
-        end
-        -- Check if the menu option is enabled to draw the W range
-        if self.BrandMenu.drawings.draw_w_range:get() then
-            -- If its just 1 line like previous one to check if spell is ready, we can use this code aswell
-            -- It has the same effect if checks if the spell is ready, if it is it sets the value to 255, if not it sets it to 50
-            local alpha = player:spellSlot(SpellSlot.W).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, self.wData.range, 2, graphics.argb(alpha, 0, 255, 255))
-        end
-        if self.BrandMenu.drawings.draw_e_range:get() then
-            local alpha = player:spellSlot(SpellSlot.E).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, 660, 2, graphics.argb(alpha, 0, 127, 255))
-        end
-        if self.BrandMenu.drawings.draw_r_range:get() then
-            local alpha = player:spellSlot(SpellSlot.R).state == 0 and 255 or 50
-            graphics.drawCircle(player.pos, 750, 2, graphics.argb(alpha, 255, 127, 0))
-        end
+		-- Check if the menu option is enabled to draw the Q range
+		if self.BrandMenu.drawings.draw_q_range:get() then
+			local alpha = player:spellSlot(SpellSlot.Q).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, self.qData.range, 2, graphics.argb(alpha, 204, 127, 0))
+		end
+		-- Check if the menu option is enabled to draw the W range
+		if self.BrandMenu.drawings.draw_w_range:get() then
+			-- If its just 1 line like previous one to check if spell is ready, we can use this code aswell
+			-- It has the same effect if checks if the spell is ready, if it is it sets the value to 255, if not it sets it to 50
+			local alpha = player:spellSlot(SpellSlot.W).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, self.wData.range, 2, graphics.argb(alpha, 0, 255, 255))
+		end
+		if self.BrandMenu.drawings.draw_e_range:get() then
+			local alpha = player:spellSlot(SpellSlot.E).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, 660, 2, graphics.argb(alpha, 0, 127, 255))
+		end
+		if self.BrandMenu.drawings.draw_r_range:get() then
+			local alpha = player:spellSlot(SpellSlot.R).state == 0 and 255 or 50
+			graphics.drawCircle(player.pos, 750, 2, graphics.argb(alpha, 255, 127, 0))
+		end
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "DrawCalcsDraw")
 		for key,value in ipairs(drawRDamage) do
@@ -1345,21 +1343,21 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    -- This function will be called every time someone did cast a spell.
-    function Brand:OnCastSpell(source, spell)
+	-- This function will be called every time someone did cast a spell.
+	function Brand:OnCastSpell(source, spell)
 		self:debugFlush()
-        -- Compare the handler of the source to our player 
-        if source.handle == player.handle then
+		-- Compare the handler of the source to our player
+		if source.handle == player.handle then
 			table.insert(debugList, "CastSpell")
-            -- Store the time when the spell was casted, which will be used inside Annie:IsCasting()
+			-- Store the time when the spell was casted, which will be used inside Annie:IsCasting()
 			if spell.slot + 1 <= 4 then
 				self.castTimeClock[spell.slot + 1] = game.time + self.castTime[spell.slot + 1]
 				self:DebugPrint("Casting spell: " .. spell.name)
 			end
 			table.remove(debugList, #debugList)
-        end
+		end
 		if not source or not source.isHero then return end
 		table.insert(debugList, "Exceptions")
 		if spell.name == "EvelynnR" and source.isAlly then
@@ -1379,9 +1377,9 @@ cb.add(cb.load, function()
 			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
-    end
-	
-    function Brand:OnBasicAttack(source, spell)
+	end
+
+	function Brand:OnBasicAttack(source, spell)
 		self:debugFlush()
 		if not source or not source.isHero then return end
 		table.insert(debugList, "SpellCast")
@@ -1399,30 +1397,30 @@ cb.add(cb.load, function()
 			casting[source.handle] = game.time + totalTime
 		end
 		table.remove(debugList, #debugList)
-    end
+	end
 
-    -- This function will be executed inside OnTick and will prevent spamming the same spell as it gets casted.
-    -- While a spell is being casted (0.25 sec most of the time), the spell state stays the same.
-    function Brand:IsCasting()
-        -- Get current time
-        local time = game.time
-        -- loop through all the spells
-        for index, value in ipairs(self.castTimeClock) do
-		-- Logic so casting is considered as finished for the server, your ping
-                if time - value < -game.latency/1000 then
-                    return true
-                end
-        end
-        return false
-    end
+	-- This function will be executed inside OnTick and will prevent spamming the same spell as it gets casted.
+	-- While a spell is being casted (0.25 sec most of the time), the spell state stays the same.
+	function Brand:IsCasting()
+		-- Get current time
+		local time = game.time
+		-- loop through all the spells
+		for index, value in ipairs(self.castTimeClock) do
+			-- Logic so casting is considered as finished for the server, your ping
+			if time - value < -game.latency/1000 then
+				return true
+			end
+		end
+		return false
+	end
 
-    -- Call the initialization function
-    Brand:__init()
+	-- Call the initialization function
+	Brand:__init()
 
 end)
 
 -- This callback is called when the script gets unloaded.
 cb.add(cb.unload, function()
-    -- We delete the menu for our script, with the same name as we created it.
-    menu.delete('open_Brand')
+	-- We delete the menu for our script, with the same name as we created it.
+	menu.delete('open_Brand')
 end)
