@@ -69,7 +69,7 @@ cb.add(cb.load, function()
 	-- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
-	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "BardRStasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf"}
+	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "bardrstasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf"}
 	local selfBuffToCheck = {"XerathArcanopulseChargeUp", "xerathrshots", "xerathascended2onhit", "SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
 	local Xerath = {}
 	local buffs = {}
@@ -373,7 +373,7 @@ cb.add(cb.load, function()
 			if buff and buffTime < buff.remainingTime and (buff.name ~= "PantheonE" or self:IsFacingPlayer(target)) and (buff.name ~= "XinZhaoRRangedImmunity" or player.pos:distance2D(target.pos) > 450) and (buff.name ~= "gwenwmissilecatcher" or player.pos:distance2D(self:gwenWParticlePos(target)) > 440) then
 				buffTime = buff.remainingTime
 				if buff.name == "PantheonE" then
-					buffTime = buffTime + 0.15
+					buffTime = buffTime + 0.2
 				end
 			end
 		end
