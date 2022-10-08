@@ -500,6 +500,34 @@ cb.add(cb.load, function()
 		local facing = skillshotDirection:dot(direction)
 		return facing < 0
 	end
+	
+	--Thanks seidhr again
+	
+	function Xerath:prediSlowXer(duration)
+		local speedList = {}
+		local slowValue = (duration/1.5)*0.4
+		slowValue = slowValue - (slowValue % 0.05)
+		local updatedSpeed = player.characterIntermediate.moveSpeed
+		if slowValue < 0.1 then
+			table.insert(speedList, updatedSpeed)
+			table.insert(speedList, updatedSpeed)
+		end
+		for i = 0.1 - slowValue, 0.4 - slowValue, 0.05 do 
+			local finalSpeed = updatedSpeed * (1 - i)
+			if finalSpeed < 220 then
+				finalSpeed = (finalSpeed * 0.5) + 110;
+			end
+			table.insert(speedList, finalSpeed)
+		end
+		
+		totalSpeed = 0
+		for key, value in pairs(speedList) do
+			totalSpeed = totalSpeed + value
+		end
+		totalSpeed = totalSpeed / #speedList
+
+		return totalSpeed;
+	end
 
 	function Xerath:GetExtraDamage(target, shots, predictedHealth, damageDealt, isCC, firstShot)
 		local damage = 0
@@ -1090,7 +1118,7 @@ cb.add(cb.load, function()
 			local WDamage = self:GetDamageW2(enemy, 0)
 			local RDamage = self:GetDamageR(enemy, 0, 0, enemy.health, true)
 			local totalHP = (enemy.health + enemy.allShield + enemy.magicalShield)
-			local ELandingTime = (math.max(0, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius))) / self.eData.speed + self.eData.delay)
+			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield")
 			local canBeSlowed = canBeStunned and not enemy:getBuff("Highlander")
 			table.remove(debugList, #debugList)
@@ -1117,7 +1145,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoEStasis")
-			if StasisE and stasisTime > 0 and (stasisTime - pingLatency) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+			if StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.1) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
 				self:CastE(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
 			end
 			table.remove(debugList, #debugList)
@@ -1239,7 +1267,7 @@ cb.add(cb.load, function()
 				end
 				if not value.castingPos or player.pos:distance2D(value.castingPos) > 1500 or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
-				local ELandingTime = (math.max(0, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius))) / self.eData.speed + self.eData.delay)
+				local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.qData.delay - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
@@ -1258,7 +1286,7 @@ cb.add(cb.load, function()
 				end
 				goto nextParticle
 				::qBuffHandling::
-				if canQ and (particleTime - pingLatency + 0.2) <= 0.5 then
+				if canQ and (particleTime - pingLatency) <= 0.5 then
 					player:updateChargeableSpell(SpellSlot.Q, value.castingPos)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")
@@ -1304,7 +1332,7 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local ELandingTime = (math.max(0, (player.pos:distance2D(target.pos) - (target.boundingRadius))) / self.eData.speed + self.eData.delay)
+			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			local chargingQ = qBuff
 			local shouldNotSwapTarget = false
@@ -1333,9 +1361,11 @@ cb.add(cb.load, function()
 			table.insert(debugList, "ComboQ2")
 			if CanUseQ and (target.path and pred.positionAfterTime(target, 0.5 + pingLatency):distance2D(player.pos) <= 1500 or target.pos:distance2D(player.pos) <= 1500) and orb.predictHP(target, 1.5 + pingLatency) > 0 and godBuffTimeCombo <= 1.5 + pingLatency and (noKillBuffTimeCombo <= 1.5 + pingLatency or not ((((totalHP) - QDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				self:CastQ2(target,"combo", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, QDamage, totalHP, chargingQ, CCTime, canBeStunned)
-				QTarget = chargingQ and target or nil
-				table.remove(debugList, #debugList)
-				break
+				if chargingQ then
+					QTarget = target
+					table.remove(debugList, #debugList)
+					break
+				end
 			end
 			table.remove(debugList, #debugList)
 			if shouldNotSwapTarget then break end
@@ -1372,7 +1402,7 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local ELandingTime = (player.pos:distance2D(target.pos) / self.eData.speed + self.eData.delay)
+			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			local chargingQ = qBuff
 			table.remove(debugList, #debugList)
@@ -1390,9 +1420,11 @@ cb.add(cb.load, function()
 			table.insert(debugList, "HarassQ2")
 			if CanUseQ and (target.path and pred.positionAfterTime(target, 0.5 + pingLatency):distance2D(player.pos) <= 1500 or target.pos:distance2D(player.pos) <= 1500) and orb.predictHP(target, 1.5 + pingLatency) > 0 and godBuffTimeCombo <= 1.5 + pingLatency and (noKillBuffTimeCombo <= 1.5 + pingLatency or not ((((totalHP) - QDamage)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				self:CastQ2(target,"harass", godBuffTimeCombo, pingLatency, noKillBuffTimeCombo, QDamage, totalHP, chargingQ, CCTime, canBeStunned)
-				QTarget = chargingQ and target or nil
-				table.remove(debugList, #debugList)
-				break
+				if chargingQ then
+					QTarget = target
+					table.remove(debugList, #debugList)
+					break
+				end
 			end
 			table.remove(debugList, #debugList)
 			::continue::
@@ -1428,9 +1460,10 @@ cb.add(cb.load, function()
 		local buff = chargingQ
 		buff = buff and buff.valid or nil
 		self.qChargeData.from = player.pos:extend(target.pos, 750)
-		self.qChargeData.speed = 500 + player.characterIntermediate.moveSpeed*1.125
-		local p = pred.getPrediction(target, self.qChargeData)
-		if not buff and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= 1500 and p.hitChance >= 1 then
+		local averageSpeed = self:prediSlowXer(chargingQ and (game.time - chargingQ.startTime) or 0)
+		self.qChargeData.speed = 500 + averageSpeed + (averageSpeed - target.characterIntermediate.moveSpeed)
+		local pQ1 = pred.getPrediction(target, self.qChargeData)
+		if not buff and pQ1 and pQ1.castPosition.isValid and player.pos:distance2D(pQ1.castPosition) <= 1500 and pQ1.hitChance >= 1 then
 			player:castSpell(SpellSlot.Q, game.cursorPos, true, false)
 			hasCasted = true
 		elseif godBuffTime <= 0.4 + pingLatency and (noKillBuffTime <= 0.4 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
@@ -1453,7 +1486,7 @@ cb.add(cb.load, function()
 				self.qData.range = 750
 			end
 		end
-		return p and p.hitChance or 0
+		return pQ1 and pQ1.hitChance or 0
 	end
 
 	-- This function will cast W on the target, the mode attribute is used to check if its enabled in the menu based on mode, as we created the menu similar for combo and harass.
