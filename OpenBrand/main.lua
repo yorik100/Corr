@@ -529,7 +529,7 @@ cb.add(cb.load, function()
 		elseif string.find(object.name, "Tahm")  and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object then
+		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object and object.asEffectEmitter.targetAttachment.object.handle == player.handle then
 			owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
 			target = object.asEffectEmitter.targetAttachment.object
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
