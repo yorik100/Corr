@@ -1217,7 +1217,7 @@ cb.add(cb.load, function()
 				if not self:WillGetHitByR(enemy) or not ((((totalHP) - RDamage)/enemy.maxHealth) < (ElderBuff and 0.2 or 0)) then
 					if player:spellSlot(SpellSlot.R).state == 0 and (stasisTime - pingLatency + 0.2) < 0.6 then
 						local predResult = pred.getPrediction(enemy, self.rData)
-						local mustShoot = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast or (predResult and predResult.hitChance >= 9))
+						local mustShoot = (self.XerathMenu.misc.auto_r:get() or self.XerathMenu.misc.manual_r:get() or prioCast or (predResult and predResult.hitChance >= 6))
 						if mustShoot then
 							self:CastR(enemy, godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, RDamage, totalHP, CCTime, prioCast, predResult)
 						end
