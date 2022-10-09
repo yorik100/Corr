@@ -450,7 +450,7 @@ cb.add(cb.load, function()
 			if startPos:distance2D(target.pos) >= target.boundingRadius then
 				self.eCollideData.from = player.pos:extend(target.pos, target.boundingRadius)
 			else
-				self.eCollideData.from = nil
+				self.eCollideData.from = target.pos
 			end
 			self.eCollideData.range = 1065 + target.boundingRadius
 			local collisionTable = pred.findSpellCollisions(nil, self.eCollideData, startPos, endPos, timeToReach)
@@ -1519,7 +1519,7 @@ cb.add(cb.load, function()
 		if player.pos:distance2D(target.pos) >= target.boundingRadius then
 			self.eData.from = player.pos:extend(target.pos, target.boundingRadius)
 		else
-			self.eData.from = nil
+			self.eData.from = target.pos
 		end
 		local p = pred.getPrediction(target, self.eData)
 		self.eData.range = 1065

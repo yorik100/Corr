@@ -1237,7 +1237,7 @@ cb.add(cb.load, function()
 			if player.pos:distance2D(target.pos) >= target.boundingRadius then
 				self.qData.from = player.pos:extend(target.pos, target.boundingRadius)
 			else
-				self.qData.from = nil
+				self.qData.from = target.pos
 			end
 			p = pred.getPrediction(target, self.qData)
 			self.qData.range = 1040
