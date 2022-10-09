@@ -129,7 +129,7 @@ cb.add(cb.load, function()
 		self.eData = {
 			delay = 0.25,
 			speed = 1400,
-			range = 1125,
+			range = 1065,
 			radius = 60,
 			collision = { -- if not defined -> no collision calcs
 				hero = SpellCollisionType.Hard,
@@ -150,7 +150,7 @@ cb.add(cb.load, function()
 		self.eCollideData = {
 			delay = 0,
 			speed = 1400,
-			range = 1125,
+			range = 1065,
 			radius = 60,
 			collision = { -- if not defined -> no collision calcs
 				hero = SpellCollisionType.Hard,
@@ -447,6 +447,7 @@ cb.add(cb.load, function()
 			local speed = value.obj.missileSpeed
 			local timeToReach = startPos:distance2D(endPos)/speed
 			self.eCollideData.delay = -game.latency/1000
+			self.eCollideData.range = 1065 + target.boundingRadius
 			local collisionTable = pred.findSpellCollisions(nil, self.eCollideData, startPos, endPos, timeToReach)
 			local collisionTarget = collisionTable[1]
 			if collisionTarget and collisionTarget.handle == target.handle then
@@ -907,7 +908,7 @@ cb.add(cb.load, function()
 			else
 				local accountQ = (player:spellSlot(SpellSlot.Q).state == 0 or (player.activeSpell and player.activeSpell.hash == 2320506602 and casting[player.handle] and game.time < casting[player.handle])) and player.pos:distance2D(target.pos) <= 1500
 				local accountW = (player:spellSlot(SpellSlot.W).state == 0 and player.pos:distance2D(target.pos) <= self.wData.range) or self:WillGetHitByW(target)
-				local accountE = (player:spellSlot(SpellSlot.E).state == 0 and player.pos:distance2D(target.pos) <= self.eData.range) or self:MissileE(target)
+				local accountE = (player:spellSlot(SpellSlot.E).state == 0 and (player.pos:distance2D(target.pos) - target.boundingRadius) <= self.eData.range) or self:MissileE(target)
 				local accountR = rBuff and player.pos:distance2D(target.pos) <= self.rData.range
 				local QDamage = accountQ and self:GetDamageQ(target, 999) or 0
 				local WDamage = accountW and (accountQ and self:GetDamageW2Alternative(target, 999) or self:GetDamageW2(target, 999)) or 0
@@ -1102,7 +1103,7 @@ cb.add(cb.load, function()
 			local dashing = enemy.path and enemy.path.isDashing
 			local CCTime = pred.getCrowdControlledTime(enemy)
 			local channelingSpell = (enemy.isCastingInterruptibleSpell and enemy.isCastingInterruptibleSpell > 0) or (enemy.activeSpell and enemy.activeSpell.hash == 692142347) or enemy.isRecalling
-			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and enemy.pos:distance2D(player.pos) <= self.eData.range
+			local manualE = self.XerathMenu.misc.manual_e:get() and not onceOnly and player:spellSlot(SpellSlot.E).state == 0 and (enemy.pos:distance2D(player.pos) - enemy.boundingRadius) <= self.eData.range
 			local castTime = (enemy.activeSpell and casting[enemy.handle] and game.time < casting[enemy.handle]) and (casting[enemy.handle] - game.time) or 0
 			local prioCast = dashing or castTime > 0 or (stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.6)
 			local manualR = enemy.pos:distance2D(player.pos) <= 5000 and enemy.pos:distance2DSqr(game.cursorPos) <= (self.XerathMenu.misc.near_mouse_r:get() > 0 and self.XerathMenu.misc.near_mouse_r:get()^ 2 or math.huge) and (stasisTime - pingLatency) < 1
@@ -1265,7 +1266,7 @@ cb.add(cb.load, function()
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
 				end
-				if not value.castingPos or player.pos:distance2D(value.castingPos) > 1500 or not particleOwner.isEnemy then goto nextParticle end
+				if not value.castingPos or player.pos:distance2D(value.castingPos) > math.max(1500, self.eData.range + particleOwner.boundingRadius) or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.qData.delay - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
@@ -1273,7 +1274,7 @@ cb.add(cb.load, function()
 				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
 				local canQ = QParticle and not QCanDodge and player.pos:distance2D(value.castingPos) <= self:GetChargeRange(1500, 750, 1.5)
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
-				local canE = EParticle and not ECanDodge and player.pos:distance2D(value.castingPos) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
+				local canE = EParticle and not ECanDodge and (player.pos:distance2D(value.castingPos) - value.boundingRadius) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
 				if QParticle then goto qBuffHandling end
 				if canE and (particleTime - pingLatency) <= ELandingTime then
 					player:castSpell(SpellSlot.E, value.castingPos, true, false)
@@ -1310,13 +1311,13 @@ cb.add(cb.load, function()
 
 		table.insert(debugList, "Combo")
 		for index, target in pairs(targetList) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or self:invisibleValid(target, 1500)) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and target.isValid and (target:isValidTarget(math.max(1500, self.eData.range + target.boundingRadius), true, player.pos) or self:invisibleValid(target, math.max(1500, self.eData.range + target.boundingRadius))) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 
 			table.insert(debugList, "ComboCalcs")
 			local CanUseQ = self.XerathMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
 			local CanUseW = self.XerathMenu.combo.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.75 + game.latency/1000):distance2D(player.pos) <= 1000 or target.pos:distance2D(player.pos) <= 1000)
-			local CanUseE = self.XerathMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= self.eData.range
+			local CanUseE = self.XerathMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and (target.pos:distance2D(player.pos) - target.boundingRadius) <= self.eData.range
 			table.remove(debugList, #debugList)
 			if not CanUseQ and not CanUseW and not CanUseE then goto continue end
 
@@ -1381,7 +1382,7 @@ cb.add(cb.load, function()
 
 		table.insert(debugList, "Harass")
 		for index, target in pairs(targetList) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1500, true, player.pos) or (target.isValid and target.pos and target.pos:distance2D(player.pos) <= 1500 and ((target.path and target.path.count > 1) or target.isRecalling))) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and target.isValid and (target:isValidTarget(math.max(1500, self.eData.range + target.boundingRadius), true, player.pos) or self:invisibleValid(target, math.max(1500, self.eData.range + target.boundingRadius))) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 
 			table.insert(debugList, "HarassCalcs")
@@ -1509,10 +1510,12 @@ cb.add(cb.load, function()
 	function Xerath:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
+		self.eData.range = 1065 + target.boundingRadius
 		local p = pred.getPrediction(target, self.eData)
+		self.eData.range = 1065
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		-- Cast E with pred
-		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.eData.range and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
+		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and (player.pos:distance2D(p.castPosition) - target.boundingRadius) <= self.eData.range and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
 			player:castSpell(SpellSlot.E, p.castPosition, true, false)
 			hasCasted = true
 			self:DebugPrint("Casted E on " .. mode)

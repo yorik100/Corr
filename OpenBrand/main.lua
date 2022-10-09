@@ -105,7 +105,7 @@ cb.add(cb.load, function()
 		self.qData = {
 			delay = 0.25,
 			speed = 1600,
-			range = 1100,
+			range = 1040,
 			radius = 60,
 			collision = { -- if not defined -> no collision calcs
 				hero = SpellCollisionType.Hard,
@@ -911,7 +911,7 @@ cb.add(cb.load, function()
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
 				end
-				if not value.castingPos or player.pos:distance2D(value.castingPos) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
+				if not value.castingPos or (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius + self.qData.radius)) / self.qData.speed + self.qData.delay))
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
@@ -943,11 +943,11 @@ cb.add(cb.load, function()
 		table.insert(debugList, "Combo")
 		local pingLatency = game.latency/1000
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and target.isValid and (target:isValidTarget(math.max(1350, self.qData.range + target.boundingRadius), true, player.pos) or self:invisibleValid(target, math.max(1350, self.qData.range + target.boundingRadius))) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 
 			table.insert(debugList, "ComboCalcs")
-			local CanUseQ = self.BrandMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
+			local CanUseQ = self.BrandMenu.combo.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0 and (target.pos:distance2D(player.pos) - target.boundingRadius) <= self.qData.range
 			local CanUseW = self.BrandMenu.combo.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
 			local CanUseE = self.BrandMenu.combo.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660 and target.isVisible
 			local CanUseR = self.BrandMenu.combo.use_r:get() and player:spellSlot(SpellSlot.R).state == 0 and target.pos:distance2D(player.pos) <= 750
@@ -1145,11 +1145,11 @@ cb.add(cb.load, function()
 
 		table.insert(debugList, "Harass")
 		for index, target in pairs(ts.getTargets()) do
-			local validTarget =  target and not target.isZombie and (target:isValidTarget(1100, true, player.pos) or self:invisibleValid(target, 1100)) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
+			local validTarget =  target and not target.isZombie and target.isValid and (target:isValidTarget(math.max(1350, self.qData.range + target.boundingRadius), true, player.pos) or self:invisibleValid(target, math.max(1350, self.qData.range + target.boundingRadius))) and target.isTargetableToTeamFlags and target.isTargetable and not target.isInvulnerable
 			if not validTarget then goto continue end
 
 			table.insert(debugList, "HarassCalcs")
-			local CanUseQ = self.BrandMenu.harass.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0
+			local CanUseQ = self.BrandMenu.harass.use_q:get() and player:spellSlot(SpellSlot.Q).state == 0 and (target.pos:distance2D(player.pos) - target.boundingRadius) <= self.qData.range
 			local CanUseW = self.BrandMenu.harass.use_w:get() and player:spellSlot(SpellSlot.W).state == 0 and (target.path and pred.positionAfterTime(target, 0.625 + game.latency/1000):distance2D(player.pos) <= 900 or target.pos:distance2D(player.pos) <= 900)
 			local CanUseE = self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 and target.pos:distance2D(player.pos) <= 660 and target.isVisible
 			if self.BrandMenu.harass.use_e:get() and player:spellSlot(SpellSlot.E).state == 0 then orb.setAttackPause(0.075) end
@@ -1233,11 +1233,13 @@ cb.add(cb.load, function()
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
+			self.qData.range = 1040 + target.boundingRadius
 			p = pred.getPrediction(target, self.qData)
+			self.qData.range = 1040
 			local WTime = self:WillGetHitByW(target)
 			local AblazeBuff = target.asAIBase:findBuff("BrandAblaze")
 			local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.q_hitchance:get()] or 1)
-			if p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.qData.range and p.hitChance >= hitChanceMode and ((WTime and WTime < p.timeToTarget-0.2+pingLatency) or (AblazeBuff and AblazeBuff.remainingTime >= p.timeToTarget+pingLatency) or ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
+			if p and p.castPosition.isValid and (player.pos:distance2D(p.castPosition) - target.boundingRadius) <= self.qData.range and p.hitChance >= hitChanceMode and ((WTime and WTime < p.timeToTarget-0.2+pingLatency) or (AblazeBuff and AblazeBuff.remainingTime >= p.timeToTarget+pingLatency) or ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 				player:castSpell(SpellSlot.Q, p.castPosition, true, false)
 				hasCasted = true
 				self:DebugPrint("Casted Q on " .. mode)
