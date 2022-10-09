@@ -69,7 +69,7 @@ cb.add(cb.load, function()
 	-- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
-	local buffToCheck = {"MorganaE", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "bardrstasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf"}
+	local buffToCheck = {"MorganaE", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "bardrstasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf", "zedrtargetmark"}
 	local selfBuffToCheck = {"SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
 	local Brand = {}
 	local buffs = {}
@@ -529,10 +529,13 @@ cb.add(cb.load, function()
 		elseif string.find(object.name, "Tahm")  and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object and object.asEffectEmitter.targetAttachment.object.handle == player.handle then
-			owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
-			target = object.asEffectEmitter.targetAttachment.object
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
+		elseif string.find(object.name, "Zed") and string.find(object.name, "_R_tar_TargetMarker") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.attachment.object.handle == player.handle then
+			target = object.asEffectEmitter.attachment.object
+			deathBuff = target:getBuff("zedrtargetmark")
+			if deathBuff then
+				owner = deathBuff.caster
+			end
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.95, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_red.troy" and object.isEffectEmitter then
 			teleportOwner = object.asEffectEmitter.attachment.object
@@ -804,40 +807,42 @@ cb.add(cb.load, function()
 			local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius + self.qData.radius)) / self.qData.speed + self.qData.delay))
 			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield")
 			table.remove(debugList, #debugList)
-
-			table.insert(debugList, "AutoQDash")
-			if DashQ and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if Ablaze or WHit then
-					self:CastQ(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
-					self:CastE(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+			
+			if stasisTime <= 0 then
+				table.insert(debugList, "AutoQDash")
+				if DashQ and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
+					if Ablaze or WHit then
+						self:CastQ(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
+					elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
+						self:CastE(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+					end
 				end
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoQInterrupt")
-			if ChannelQ and channelingSpell and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if Ablaze or WHit then
-					self:CastQ(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
-					self:CastE(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoQInterrupt")
+				if ChannelQ and channelingSpell and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
+					if Ablaze or WHit then
+						self:CastQ(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
+					elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
+						self:CastE(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+					end
 				end
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoQCC")
-			if CCQ and CCTime > 0 and (CCTime - pingLatency - 0.3) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if Ablaze or WHit then
-					self:CastQ(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
-					self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoQCC")
+				if CCQ and CCTime > 0 and (CCTime - pingLatency - 0.3) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
+					if Ablaze or WHit then
+						self:CastQ(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
+					elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
+						self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+					end
 				end
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoQCasting")
-			if CastingQ and castTime > 0 and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
-				if Ablaze or WHit then
-					self:CastQ(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
-				elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
-					self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoQCasting")
+				if CastingQ and castTime > 0 and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
+					if Ablaze or WHit then
+						self:CastQ(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
+					elseif player:spellSlot(SpellSlot.E).state == 0 and enemy.isVisible and enemy.pos:distance2D(player.pos) <= 660 then
+						self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime, enemy)
+					end
 				end
 			end
 			table.remove(debugList, #debugList)
@@ -845,25 +850,27 @@ cb.add(cb.load, function()
 			if StasisQ and stasisTime > 0 and (stasisTime - pingLatency) < QLandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or QDamage < totalHP) and canBeStunned then
 				self:CastQ(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, CCTime)
 			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWDash")
-			if DashW and dashing and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWChannel")
-			if ChannelW and channelingSpell and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWCC")
-			if CCW and CCTime > 0 and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWCasting")
-			if CastingW and castTime > 0 and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+			if stasisTime <= 0 then
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWDash")
+				if DashW and dashing and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWChannel")
+				if ChannelW and channelingSpell and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWCC")
+				if CCW and CCTime > 0 and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWCasting")
+				if CastingW and castTime > 0 and godBuffTimeAuto <= 0.5 + pingLatency and (noKillBuffTimeAuto <= 0.5 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWStasis")
@@ -911,7 +918,7 @@ cb.add(cb.load, function()
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
 				end
-				if not value.castingPos or (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
+				if particleOwner.isDead or not value.castingPos or (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius + self.qData.radius)) / self.qData.speed + self.qData.delay))
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius

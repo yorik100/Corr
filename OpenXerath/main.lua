@@ -69,7 +69,7 @@ cb.add(cb.load, function()
 	-- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
-	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "bardrstasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf"}
+	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "bardrstasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf", "zedrtargetmark"}
 	local selfBuffToCheck = {"XerathArcanopulseChargeUp", "xerathrshots", "xerathascended2onhit", "SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
 	local Xerath = {}
 	local buffs = {}
@@ -739,10 +739,13 @@ cb.add(cb.load, function()
 		elseif string.find(object.name, "Tahm")  and string.find(object.name, "W_ImpactWarning_Enemy") and object.isEffectEmitter then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.65, castingPos = object.pos, bounding = 80, speed = 335})
 			self:DebugPrint("Added cast particle " .. object.name)
-		elseif string.find(object.name, "Zed") and string.find(object.name, "_W_tar") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.targetAttachment.object and object.asEffectEmitter.targetAttachment.object.handle == player.handle then
-			owner = object.asEffectEmitter.attachment.object.asAttackableUnit.owner.asAIBase
-			target = object.asEffectEmitter.targetAttachment.object
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.75, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
+		elseif string.find(object.name, "Zed") and string.find(object.name, "_R_tar_TargetMarker") and object.isEffectEmitter and object.asEffectEmitter.attachment.object and object.asEffectEmitter.attachment.object.handle == player.handle then
+			target = object.asEffectEmitter.attachment.object
+			deathBuff = target:getBuff("zedrtargetmark")
+			if deathBuff then
+				owner = deathBuff.caster
+			end
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.95, owner = owner, target = target, castingPos = nil, bounding = 65, speed = 345, zedR = true})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif object.name == "global_ss_teleport_red.troy" and object.isEffectEmitter then
 			teleportOwner = object.asEffectEmitter.attachment.object
@@ -1129,50 +1132,54 @@ cb.add(cb.load, function()
 			local canBeSlowed = canBeStunned and not enemy:getBuff("Highlander")
 			table.remove(debugList, #debugList)
 			if isUlting then goto ult end
-
-			table.insert(debugList, "AutoEDash")
-			if DashE and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
-				self:CastE(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoEInterrupt")
-			if ChannelE and channelingSpell and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
-				self:CastE(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoECC")
-			if CCE and CCTime > 0 and (CCTime - pingLatency - 0.3) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
-				self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoECasting")
-			if CastingE and castTime > 0 and (castTime - pingLatency - 0.3) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
-				self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
+			
+			if stasisTime <= 0 then
+				table.insert(debugList, "AutoEDash")
+				if DashE and dashing and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+					self:CastE(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoEInterrupt")
+				if ChannelE and channelingSpell and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+					self:CastE(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoECC")
+				if CCE and CCTime > 0 and (CCTime - pingLatency - 0.3) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+					self:CastE(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoECasting")
+				if CastingE and castTime > 0 and (castTime - pingLatency - 0.3) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+					self:CastE(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
+				end
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoEStasis")
-			if StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.1) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+			if StasisE and stasisTime > 0 and (stasisTime - pingLatency) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
 				self:CastE(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
 			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWDash")
-			if DashW and dashing and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWChannel")
-			if ChannelW and channelingSpell and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWCC")
-			if CCW and CCTime > 0 and (CCTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
-			end
-			table.remove(debugList, #debugList)
-			table.insert(debugList, "AutoWCasting")
-			if CastingW and castTime > 0 and (castTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
-				self:CastW(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+			if stasisTime <= 0 then
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWDash")
+				if DashW and dashing and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"dash", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWChannel")
+				if ChannelW and channelingSpell and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"channel", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWCC")
+				if CCW and CCTime > 0 and (CCTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"stun", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
+				table.remove(debugList, #debugList)
+				table.insert(debugList, "AutoWCasting")
+				if CastingW and castTime > 0 and (castTime - pingLatency - 0.3) < 0.75 and godBuffTimeAuto <= 0.6 + pingLatency and (noKillBuffTimeAuto <= 0.6 + pingLatency or WDamage < totalHP) then
+					self:CastW(enemy,"casting", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, WDamage, totalHP, CCTime)
+				end
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoWStasis")
@@ -1271,7 +1278,7 @@ cb.add(cb.load, function()
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
 				end
-				if not value.castingPos or player.pos:distance2D(value.castingPos) > math.max(1500, self.eData.range + particleOwner.boundingRadius) or not particleOwner.isEnemy then goto nextParticle end
+				if particleOwner.isDead or not value.castingPos or player.pos:distance2D(value.castingPos) > math.max(1500, self.eData.range + particleOwner.boundingRadius) or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
 				local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.qData.delay - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
@@ -1499,10 +1506,10 @@ cb.add(cb.load, function()
 	function Xerath:CastW(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageW, totalHP, stunTime)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
-		local w1 = pred.getPrediction(target, self.wData)
 		local w2 = pred.getPrediction(target, self.w2Data)
+		local w1 = pred.getPrediction(target, self.wData)
 		local p = (self.XerathMenu.misc.w_center_logic:get() or (w2 and w2.hitChance >= 6)) and ((w2 and w2.hitChance < HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()]) and w1 or w2) or w1
-		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
+		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.w_hitchance:get()] or 1)
 		if godBuffTime <= 0.6 + pingLatency and (noKillBuffTime <= 0.6 + pingLatency or not ((((totalHP) - GetDamageW)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and player.pos:distance2D(p.castPosition) <= self.wData.range and p.hitChance >= hitChanceMode then
 			local test = self:MissileE(target)
 			player:castSpell(SpellSlot.W, p.castPosition, true, false)
