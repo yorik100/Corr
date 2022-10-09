@@ -804,7 +804,7 @@ cb.add(cb.load, function()
 			local totalHP = (enemy.health + enemy.allShield + enemy.magicalShield)
 			local Ablaze = enemy.asAIBase:findBuff("BrandAblaze")
 			local WHit = self:WillGetHitByW(enemy)
-			local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius + self.qData.radius)) / self.qData.speed + self.qData.delay))
+			local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius)) / self.qData.speed + self.qData.delay))
 			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield")
 			table.remove(debugList, #debugList)
 			
@@ -920,7 +920,7 @@ cb.add(cb.load, function()
 				end
 				if particleOwner.isDead or not value.castingPos or (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) > self.qData.range or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
-				local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius + self.qData.radius)) / self.qData.speed + self.qData.delay))
+				local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius)) / self.qData.speed + self.qData.delay))
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				local canQ = QParticle and not QCanDodge and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
@@ -1024,7 +1024,7 @@ cb.add(cb.load, function()
 			local WDamage = self:GetDamageW2(target, 0)
 			local RDamage = rTotalDamage
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.qData.radius)) / self.qData.speed + self.qData.delay))
+			local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius)) / self.qData.speed + self.qData.delay))
 			-- local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			table.remove(debugList, #debugList)
 
@@ -1175,7 +1175,7 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(target, 0, 0, target.health, true, 1)
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.qData.radius)) / self.qData.speed + self.qData.delay))
+			local QLandingTime = (math.max(self.qData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius)) / self.qData.speed + self.qData.delay))
 			-- local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			table.remove(debugList, #debugList)
 
