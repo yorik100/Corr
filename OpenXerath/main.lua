@@ -447,6 +447,7 @@ cb.add(cb.load, function()
 			local speed = value.obj.missileSpeed
 			local timeToReach = startPos:distance2D(endPos)/speed
 			self.eCollideData.delay = -game.latency/1000
+			self.eCollideData.from = player.pos:extend(target.pos, target.boundingRadius)
 			self.eCollideData.range = 1065 + target.boundingRadius
 			local collisionTable = pred.findSpellCollisions(nil, self.eCollideData, startPos, endPos, timeToReach)
 			local collisionTarget = collisionTable[1]
@@ -1511,6 +1512,7 @@ cb.add(cb.load, function()
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
 		self.eData.range = 1065 + target.boundingRadius
+		self.eData.from = player.pos:extend(target.pos, target.boundingRadius)
 		local p = pred.getPrediction(target, self.eData)
 		self.eData.range = 1065
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)

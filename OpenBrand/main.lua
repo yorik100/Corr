@@ -1234,6 +1234,7 @@ cb.add(cb.load, function()
 		if not totalHP then totalHP = 0 end
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 			self.qData.range = 1040 + target.boundingRadius
+			self.qData.from = player.pos:extend(target.pos, target.boundingRadius)
 			p = pred.getPrediction(target, self.qData)
 			self.qData.range = 1040
 			local WTime = self:WillGetHitByW(target)
