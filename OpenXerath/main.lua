@@ -447,8 +447,9 @@ cb.add(cb.load, function()
 			local speed = value.obj.missileSpeed
 			local timeToReach = startPos:distance2D(endPos)/speed
 			self.eCollideData.delay = -game.latency/1000
-			if startPos:distance2D(target.pos) >= target.boundingRadius then
-				self.eCollideData.from = player.pos:extend(target.pos, target.boundingRadius)
+			local totalRadius = target.boundingRadius + self.eData.radius
+			if startPos:distance2D(target.pos) > totalRadius then
+				self.eCollideData.from = player.pos:extend(target.pos, totalRadius)
 			else
 				self.eCollideData.from = target.pos
 			end
@@ -1524,7 +1525,7 @@ cb.add(cb.load, function()
 		if not totalHP then totalHP = 0 end
 		local totalRadius = target.boundingRadius + self.eData.radius
 		self.eData.range = 1065 + target.boundingRadius
-		if player.pos:distance2D(target.pos) >= totalRadius then
+		if player.pos:distance2D(target.pos) > totalRadius then
 			self.eData.from = player.pos:extend(target.pos, totalRadius)
 		else
 			self.eData.from = target.pos

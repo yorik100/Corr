@@ -1242,7 +1242,7 @@ cb.add(cb.load, function()
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
 			local totalRadius = target.boundingRadius + self.eData.radius
 			self.qData.range = 1040 + target.boundingRadius
-			if player.pos:distance2D(target.pos) >= totalRadius then
+			if player.pos:distance2D(target.pos) > totalRadius then
 				self.qData.from = player.pos:extend(target.pos, totalRadius)
 			else
 				self.qData.from = target.pos
