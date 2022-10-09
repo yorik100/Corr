@@ -1279,7 +1279,7 @@ cb.add(cb.load, function()
 				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
 				local canQ = QParticle and not QCanDodge and player.pos:distance2D(value.castingPos) <= self:GetChargeRange(1500, 750, 1.5)
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
-				local canE = EParticle and not ECanDodge and (player.pos:distance2D(value.castingPos) - value.boundingRadius) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
+				local canE = EParticle and not ECanDodge and (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
 				if QParticle then goto qBuffHandling end
 				if canE and (particleTime - pingLatency) <= ELandingTime then
 					player:castSpell(SpellSlot.E, value.castingPos, true, false)
