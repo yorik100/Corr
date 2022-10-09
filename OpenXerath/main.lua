@@ -1127,7 +1127,7 @@ cb.add(cb.load, function()
 			local WDamage = self:GetDamageW2(enemy, 0)
 			local RDamage = self:GetDamageR(enemy, 0, 0, enemy.health, true)
 			local totalHP = (enemy.health + enemy.allShield + enemy.magicalShield)
-			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius)) / self.eData.speed + self.eData.delay))
+			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield")
 			local canBeSlowed = canBeStunned and not enemy:getBuff("Highlander")
 			table.remove(debugList, #debugList)
@@ -1280,7 +1280,7 @@ cb.add(cb.load, function()
 				end
 				if particleOwner.isDead or not value.castingPos or player.pos:distance2D(value.castingPos) > math.max(1500, self.eData.range + particleOwner.boundingRadius) or not particleOwner.isEnemy then goto nextParticle end
 				local particleTime = (value.time + value.castTime) - game.time
-				local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius)) / self.eData.speed + self.eData.delay))
+				local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(value.castingPos) - (particleOwner.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.qData.delay - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
@@ -1345,7 +1345,7 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius)) / self.eData.speed + self.eData.delay))
+			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			local chargingQ = qBuff
 			local shouldNotSwapTarget = false
@@ -1415,7 +1415,7 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(target, 0, 0, target.health, true)
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
-			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius)) / self.eData.speed + self.eData.delay))
+			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
 			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
 			local chargingQ = qBuff
 			table.remove(debugList, #debugList)
@@ -1522,9 +1522,10 @@ cb.add(cb.load, function()
 	function Xerath:CastE(target, mode, godBuffTime, pingLatency, noKillBuffTime, GetDamageE, totalHP, stunTime)
 		if hasCasted then return 0 end
 		if not totalHP then totalHP = 0 end
+		local totalRadius = target.boundingRadius + self.eData.radius
 		self.eData.range = 1065 + target.boundingRadius
-		if player.pos:distance2D(target.pos) >= target.boundingRadius then
-			self.eData.from = player.pos:extend(target.pos, target.boundingRadius)
+		if player.pos:distance2D(target.pos) >= totalRadius then
+			self.eData.from = player.pos:extend(target.pos, totalRadius)
 		else
 			self.eData.from = target.pos
 		end
@@ -1645,6 +1646,7 @@ cb.add(cb.load, function()
 				local missingLivingTime = game.time - value.time
 				local traveledDistance = missingLivingTime * value.obj.missileSpeed
 				graphics.drawLine(value.obj.startPosition:extend(value.obj.endPosition, traveledDistance), value.obj.endPosition, 3, graphics.argb(255, 255, 127, 125))
+				graphics.drawCircle(vec3(value.obj.pos.x, player.pos.y, value.obj.pos.z), self.eData.radius, 4, graphics.argb(255, 127, 0, 255))
 			end
 		end
 		table.remove(debugList, #debugList)
