@@ -1469,7 +1469,7 @@ cb.add(cb.load, function()
 		local averageSpeed = self:prediSlowXer(chargingQ and (game.time - chargingQ.startTime) or 0)
 		self.qChargeData.speed = 500 + averageSpeed + (averageSpeed - target.characterIntermediate.moveSpeed)
 		local pQ1 = pred.getPrediction(target, self.qChargeData)
-		if not buff and pQ1 and pQ1.castPosition.isValid and player.pos:distance2D(pQ1.castPosition) <= 1500 and pQ1.hitChance >= 1 then
+		if not buff and ((pQ1 and pQ1.castPosition.isValid and player.pos:distance2D(pQ1.castPosition) <= 1500 and pQ1.hitChance >= 1) or target.path.count <= 1) then
 			player:castSpell(SpellSlot.Q, game.cursorPos, true, false)
 			hasCasted = true
 		elseif godBuffTime <= 0.4 + pingLatency and (noKillBuffTime <= 0.4 + pingLatency or not ((((totalHP) - GetDamageQ)/target.maxHealth) < (ElderBuff and 0.2 or 0))) then
