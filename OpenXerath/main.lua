@@ -691,12 +691,12 @@ cb.add(cb.load, function()
 		self:debugFlush()
 		table.insert(debugList, "Glow")
 		if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
-			if QTarget.isValid and not QTarget.isDead and QTarget.isOnScreen then
+			if QTarget.isValid and not QTarget.isDead then
 				QTarget:addGlow(graphics.argb(255, 255, 127, 0), ((5*-game.time) % 1) + 2, 0)
 			end
 		end
 		if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
-			if RTarget.isValid and not RTarget.isDead and not RTarget.isDead and RTarget.isOnScreen then
+			if RTarget.isValid and not RTarget.isDead then
 				RTarget:addGlow(graphics.argb(255, 255, 0, 0), ((5*-game.time) % 1) + 2, 0)
 			end
 		end
