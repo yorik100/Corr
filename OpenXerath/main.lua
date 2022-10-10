@@ -409,7 +409,7 @@ cb.add(cb.load, function()
 	end
 
 	function Xerath:invisibleValid(target, distance)
-		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags and target.isTargetable)
+		return (target.isValid and target.pos and target.pos:distance2D(player.pos) <= distance and target.isRecalling and navMesh.isInFOW(target.pos) and not target.isDead and not target.isInvulnerable and target.isTargetableToTeamFlags and target.isTargetable)
 	end
 
 	function Xerath:WillGetHitByW(target)
