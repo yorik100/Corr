@@ -931,7 +931,7 @@ cb.add(cb.load, function()
 					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")
-				elseif canW and (particleTime - pingLatency + 0.15) <= 0.875 then
+				elseif canW and (particleTime - pingLatency + 0.05) <= 0.875 then
 					player:castSpell(SpellSlot.W, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted W on particle")
@@ -1251,6 +1251,7 @@ cb.add(cb.load, function()
 			end
 			p = pred.getPrediction(target, self.qData)
 			self.qData.range = 1040
+			self.qData.from = nil
 			local WTime = self:WillGetHitByW(target)
 			local AblazeBuff = target.asAIBase:findBuff("BrandAblaze")
 			local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass")) and HitchanceMenu[self.BrandMenu.prediction.q_hitchance:get()] or 1)
