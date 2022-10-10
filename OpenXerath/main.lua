@@ -361,7 +361,9 @@ cb.add(cb.load, function()
 
 	function Xerath:gwenWParticlePos(target)
 		local particle = particleGwenList[target.handle]
-		return particle.pos
+		if particle then
+			return particle.pos
+		end
 	end
 
 	-- To know the remaining time of someone's invulnerable or spellshielded
