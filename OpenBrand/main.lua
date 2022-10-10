@@ -671,7 +671,7 @@ cb.add(cb.load, function()
 		drawRValue = {}
 		drawETargets = {}
 		for _, unit in pairs(ts.getTargets()) do
-			if unit.isHealthBarVisible and not unit.isDead and unit.isOnScreen then
+			if unit.isHealthBarVisible and not unit.isDead then
 				if unit.skinName == "Yuumi" then
 					local YuumiBuff = unit:getBuff("YuumiWAttach")
 					if YuumiBuff and YuumiBuff.caster.handle == unit.handle then goto continue end
