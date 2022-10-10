@@ -993,7 +993,7 @@ cb.add(cb.load, function()
 				local isFirstShot = true
 				local totalHP = unit.health + unit.allShield + unit.magicalShield
 				local rActive = player:spellSlot(SpellSlot.R).level ~= 0 and (player:spellSlot(SpellSlot.R).cooldown <= 0 or particleRList[1] or rBuff)
-				if self.XerathMenu.drawings.draw_r_damage:get() and unit.isOnScreen and rActive then
+				if self.XerathMenu.drawings.draw_r_damage:get() and rActive then
 					rDamage = 0
 					for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
 						local calculatedRDamage = self:GetDamageR(unit, 0, i, totalHP - rDamage, isFirstShot)
@@ -1014,7 +1014,7 @@ cb.add(cb.load, function()
 				end
 				table.remove(debugList, #debugList)
 				table.insert(debugList, "DrawLoop2")
-				if self.XerathMenu.drawings.draw_r_damage_text:get() and unit.isOnScreen and rActive then
+				if self.XerathMenu.drawings.draw_r_damage_text:get() and rActive then
 					if not rDamage then
 						rDamage = 0
 						for i = (((particleRList[1] or rBuff) and rshots and rshots > 0) and rshots or 2 + player:spellSlot(SpellSlot.R).level) - 1, 0, -1 do
@@ -1159,7 +1159,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoEStasis")
-			if StasisE and stasisTime > 0 and (stasisTime - pingLatency) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
+			if StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.05) < ELandingTime and godBuffTimeAuto <= 0.2 + pingLatency and (noKillBuffTimeAuto <= 0.2 + pingLatency or EDamage < totalHP) and canBeStunned then
 				self:CastE(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, EDamage, totalHP, CCTime)
 			end
 			if stasisTime <= 0 then
@@ -1291,7 +1291,7 @@ cb.add(cb.load, function()
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
 				local canE = EParticle and not ECanDodge and (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
 				if QParticle then goto qBuffHandling end
-				if canE and (particleTime - pingLatency) <= ELandingTime then
+				if canE and (particleTime - pingLatency + 0.05) <= ELandingTime then
 					player:castSpell(SpellSlot.E, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted E on particle")
