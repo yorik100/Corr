@@ -1289,7 +1289,9 @@ cb.add(cb.load, function()
 				local ECanDodge = particleOwner.characterIntermediate.moveSpeed*((ELandingTime - particleTime) + pingLatency) > self.eData.radius + particleOwner.boundingRadius
 				local canQ = QParticle and not QCanDodge and player.pos:distance2D(value.castingPos) <= self:GetChargeRange(1500, 750, 1.5)
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
+				self.eData.range = 1065 + particleOwner.boundingRadius
 				local canE = EParticle and not ECanDodge and (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
+				self.eData.range = 1065
 				if QParticle then goto qBuffHandling end
 				if canE and (particleTime - pingLatency + 0.05) <= ELandingTime then
 					player:castSpell(SpellSlot.E, value.castingPos, true, false)
@@ -1534,7 +1536,6 @@ cb.add(cb.load, function()
 		end
 		local p = pred.getPrediction(target, self.eData)
 		self.eData.range = 1065
-		self.eData.from = nil
 		local hitChanceMode = (mode == "dash" or mode == "stun" or mode == "casting") and 6 or ((target.characterIntermediate.moveSpeed > 0 and (mode == "combo" or mode == "harass" or mode == "manual")) and HitchanceMenu[self.XerathMenu.prediction.e_hitchance:get()] or 1)
 		-- Cast E with pred
 		if godBuffTime <= 0.2 + pingLatency and (noKillBuffTime <= 0.2 + pingLatency or not ((((totalHP) - GetDamageE)/target.maxHealth) < (ElderBuff and 0.2 or 0))) and (not self:MissileE(target) or (target.path and (target.path.isDashing or target.path.count <= 1))) and p and p.castPosition.isValid and (player.pos:distance2D(p.castPosition) - target.boundingRadius) <= self.eData.range and p.hitChance >= hitChanceMode and (not self:WillGetHitByW(target) or stunTime > 0 or godBuffTime > 0) then
