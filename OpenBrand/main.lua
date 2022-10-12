@@ -513,7 +513,7 @@ cb.add(cb.load, function()
 			particleGwenList[owner2.handle] = object
 			self:DebugPrint("Added particle Gwen")
 		elseif string.find(object.name, "Twisted") and string.find(object.name, "_R_Gatemarker_Red") and object.isEffectEmitter then
-			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.5, castingPos = object.pos, bounding = 65, speed = 330})
+			table.insert(particleCastList, {obj = object, time = game.time, castTime = 1.6, castingPos = object.pos, bounding = 65, speed = 330})
 			self:DebugPrint("Added cast particle " .. object.name)
 		elseif string.find(object.name, "Ekko_") and string.find(object.name, "_R_ChargeIndicator") and object.isEffectEmitter and (not allyREkkoCast or allyREkkoCast <= game.time - 0.35) then
 			table.insert(particleCastList, {obj = object, time = game.time, castTime = 0.5, castingPos = object.pos, bounding = 65, speed = 340})
