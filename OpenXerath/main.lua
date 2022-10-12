@@ -69,7 +69,7 @@ cb.add(cb.load, function()
 	-- Create a 'class/table' where all the functions will be stored
 	-- Thanks Torb
 	local HitchanceMenu = { [0] = HitChance.Low, HitChance.Medium, HitChance.High, HitChance.VeryHigh, HitChance.DashingMidAir }
-	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "bardrstasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf", "zedrtargetmark"}
+	local buffToCheck = {"MorganaE", "Highlander", "PantheonE", "KayleR", "TaricR", "SivirE", "FioraW", "NocturneShroudofDarkness", "kindredrnodeathbuff", "YuumiWAttach", "UndyingRage", "ChronoShift", "itemmagekillerveil", "bansheesveil", "malzaharpassiveshield", "XinZhaoRRangedImmunity", "ChronoRevive", "bardrstasis", "ZhonyasRingShield", "gwenwmissilecatcher", "fizzeicon", "LissandraRSelf", "zedrtargetmark", "UdyrE2Activation"}
 	local selfBuffToCheck = {"XerathArcanopulseChargeUp", "xerathrshots", "xerathascended2onhit", "SRX_DragonSoulBuffHextech", "srx_dragonsoulbuffhextech_cd", "SRX_DragonSoulBuffInfernal", "SRX_DragonSoulBuffInfernal_Cooldown", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrike.lua", "ASSETS/Perks/Styles/Inspiration/FirstStrike/FirstStrikeAvailable.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvest.lua", "ASSETS/Perks/Styles/Domination/DarkHarvest/DarkHarvestCooldown.lua", "ElderDragonBuff", "4628marker"}
 	local Xerath = {}
 	local buffs = {}
@@ -1131,7 +1131,9 @@ cb.add(cb.load, function()
 			local RDamage = self:GetDamageR(enemy, 0, 0, enemy.health, true)
 			local totalHP = (enemy.health + enemy.allShield + enemy.magicalShield)
 			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(enemy.pos) - (enemy.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
-			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield")
+			local CCImmuneBuff = enemy:getBuff("UdyrE2Activation")
+			local isCCImmune = CCImmuneBuff and (game.time - CCImmuneBuff.startTime) <= 1.5
+			local canBeStunned = not enemy.isUnstoppable and not enemy:getBuff("MorganaE") and not enemy:getBuff("bansheesveil") and not enemy:getBuff("itemmagekillerveil") and not enemy:getBuff("malzaharpassiveshield") and not isCCImmune
 			local canBeSlowed = canBeStunned and not enemy:getBuff("Highlander")
 			table.remove(debugList, #debugList)
 			if isUlting then goto ult end
@@ -1201,7 +1203,7 @@ cb.add(cb.load, function()
 			end
 			table.remove(debugList, #debugList)
 			table.insert(debugList, "AutoQStasis")
-			if StasisQ and not StasisE and stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.5 and godBuffTimeAuto <= 0.4 + pingLatency and (noKillBuffTimeAuto <= 0.4 + pingLatency or QDamage < totalHP) then
+			if StasisQ and stasisTime > 0 and (stasisTime - pingLatency + 0.2) < 0.5 and godBuffTimeAuto <= 0.4 + pingLatency and (noKillBuffTimeAuto <= 0.4 + pingLatency or QDamage < totalHP) then
 				self:CastQ2(enemy,"stasis", godBuffTimeAuto, pingLatency, noKillBuffTimeAuto, QDamage, totalHP, qBuff, CCTime, canBeStunned)
 			end
 			table.remove(debugList, #debugList)
@@ -1351,7 +1353,9 @@ cb.add(cb.load, function()
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
 			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
-			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
+			local CCImmuneBuff = target:getBuff("UdyrE2Activation")
+			local isCCImmune = CCImmuneBuff and (game.time - CCImmuneBuff.startTime) <= 1.5
+			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield") and not isCCImmune
 			local chargingQ = qBuff
 			local shouldNotSwapTarget = false
 			table.remove(debugList, #debugList)
@@ -1421,7 +1425,9 @@ cb.add(cb.load, function()
 			local totalHP = (target.health + target.allShield + target.magicalShield)
 			local channelingSpell = (target.isCastingInterruptibleSpell and target.isCastingInterruptibleSpell > 0) or (target.activeSpell and target.activeSpell.hash == 692142347)
 			local ELandingTime = (math.max(self.eData.delay, (player.pos:distance2D(target.pos) - (target.boundingRadius + self.eData.radius)) / self.eData.speed + self.eData.delay))
-			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield")
+			local CCImmuneBuff = target:getBuff("UdyrE2Activation")
+			local isCCImmune = CCImmuneBuff and (game.time - CCImmuneBuff.startTime) <= 1.5
+			local canBeStunned = not target.isUnstoppable and not target:getBuff("MorganaE") and not target:getBuff("bansheesveil") and not target:getBuff("itemmagekillerveil") and not target:getBuff("malzaharpassiveshield") and not isCCImmune
 			local chargingQ = qBuff
 			table.remove(debugList, #debugList)
 
