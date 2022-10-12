@@ -1293,7 +1293,7 @@ cb.add(cb.load, function()
 				local canE = EParticle and not ECanDodge and (player.pos:distance2D(value.castingPos) - particleOwner.boundingRadius) <= self.eData.range and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.eData, player.pos, value.castingPos, ELandingTime+pingLatency)[1]
 				self.eData.range = 1065
 				if QParticle then goto qBuffHandling end
-				if canE and (particleTime - pingLatency + 0.05) <= ELandingTime then
+				if canE and (particleTime - pingLatency + 0.1) <= ELandingTime then
 					player:castSpell(SpellSlot.E, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted E on particle")
