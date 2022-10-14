@@ -302,6 +302,10 @@ cb.add(cb.load, function()
 				end
 			end
 		end
+		local godBuffTime = (buffs["GodBuffTime" .. target.handle] and buffs["GodBuffTime" .. target.handle] - game.time or 0)
+		if godBuffTime and buffTime < godBuffTime then
+			buffTime = godBuffTime
+		end
 		return buffTime
 	end
 
@@ -603,12 +607,21 @@ cb.add(cb.load, function()
 		self:debugFlush()
 		if not source.isHero then return end
 		table.insert(debugList, "Buff")
-		if source and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
+		if source and source.isEnemy and not gained and buff.name == "willrevive" and source.characterState.statusFlags == 65537 and source:hasItem(3026) and self:getStasisTime(source) <= 0 then
 			buffs["Time" .. source.handle] = game.time + 4
 			self:DebugPrint("Detected Guardian angel on " .. source.skinName)
 		end
 		if self.BrandMenu.debug_print_buffs:get() then
 			self:DebugPrint(source.skinName .. " -> Buff " .. (gained and "gained" or "lost") .. " : (" .. tostring(buff.name) .. ")" .. (buff.caster and (" from " .. buff.caster.name) or ""))
+		end
+		if source and source.isEnemy and (buff.type == 37 or buff.type == 38) then
+			if gained then
+				buffs["GodBuffTime" .. source.handle] = game.time + buff.remainingTime
+				self:DebugPrint("Detected godmode buff on " .. source.skinName)
+			elseif buffs["GodBuffTime" .. source.handle] ~= nil and buffs["GodBuffTime" .. source.handle] <= game.time then
+				buffs["GodBuffTime" .. source.handle] = nil
+				self:DebugPrint("Removed godmode buff on " .. source.skinName)
+			end
 		end
 		local buffFlag = false
 		for i, name in ipairs(buffToCheck) do
