@@ -1512,7 +1512,7 @@ cb.add(cb.load, function()
 				if target.path and not target.path.isDashing and target.path.count > 1 then
 					self.qData.range = self.qData.range - math.min(250, (target.characterIntermediate.moveSpeed * (self.qData.delay + pingLatency)))
 				end
-				self.qData.range = self.qData.range - (player.characterIntermediate.moveSpeed*pingLatency*2)
+				self.qData.range = self.qData.range - 50
 			end
 			local canBeSlowed = canBeStunned and not target:getBuff("Highlander")
 			p = pred.getPrediction(target, self.qData)

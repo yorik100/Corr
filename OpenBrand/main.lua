@@ -351,6 +351,17 @@ cb.add(cb.load, function()
 		end
 		return false
 	end
+	
+	function Brand:WillGetHitByWParticle(pos)
+		if not pos then return false end
+		for key,value in ipairs(particleWList) do
+			local timeBeforeHit = value.time + 0.625 - game.time
+			if value.obj and pos:distance2D(value.obj.pos) <= self.wData.radius then
+				return timeBeforeHit
+			end
+		end
+		return false
+	end
 
 	-- Thanks seidhr
 	function Brand:IsFacingPlayer(entity)
@@ -941,8 +952,8 @@ cb.add(cb.load, function()
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				self.qData.range = 1040 + particleOwner.boundingRadius
-				local canQ = QParticle and not QCanDodge and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
-				self.eData.range = 1040
+				local canQ = QParticle and self:WillGetHitByWParticle(value.castingPos) and not QCanDodge and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
+				self.qData.range = 1040
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
 				if canQ and not canW and (particleTime - pingLatency + 0.2) <= QLandingTime then
 					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
