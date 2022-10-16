@@ -807,6 +807,7 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
 		for index, enemy in pairs(ts.getTargets()) do
+			if hasCasted then break end
 			local stasisTime = self:getStasisTime(enemy)
 			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
@@ -941,7 +942,11 @@ cb.add(cb.load, function()
 					particleOwner = particleOwner.asAIBase
 				end
 				if value.teleport then
-					value.castingPos = value.target.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
+					if value.target then
+						value.castingPos = value.obj.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
+					else
+						value.castingPos = value.obj.pos
+					end
 				end
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
@@ -952,10 +957,10 @@ cb.add(cb.load, function()
 				local QCanDodge = particleOwner.characterIntermediate.moveSpeed*((QLandingTime - particleTime) + pingLatency) > self.qData.radius + particleOwner.boundingRadius
 				local WCanDodge = particleOwner.characterIntermediate.moveSpeed*((self.wData.delay - particleTime) + pingLatency) > self.wData.radius
 				self.qData.range = 1040 + particleOwner.boundingRadius
-				local canQ = QParticle and self:WillGetHitByWParticle(value.castingPos) and not QCanDodge and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
+				local canQ = QParticle and not QCanDodge and self:WillGetHitByWParticle(value.castingPos) and not pred.findSpellCollisions((particleOwner.handle and particleOwner or nil), self.qData, player.pos, value.castingPos, QLandingTime+pingLatency)[1]
 				self.qData.range = 1040
 				local canW = WParticle and not WCanDodge and player.pos:distance2D(value.castingPos) <= self.wData.range
-				if canQ and not canW and (particleTime - pingLatency + 0.2) <= QLandingTime then
+				if canQ and (particleTime - pingLatency + 0.2) <= QLandingTime then
 					player:castSpell(SpellSlot.Q, value.castingPos, true, false)
 					hasCasted = true
 					self:DebugPrint("Casted Q on particle")

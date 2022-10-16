@@ -1117,6 +1117,7 @@ cb.add(cb.load, function()
 		table.remove(debugList, #debugList)
 		table.insert(debugList, "AutoLoop")
 		for index, enemy in pairs(targetList) do
+			if hasCasted then break end
 			local stasisTime = self:getStasisTime(enemy)
 			local validTarget =  enemy and ((enemy:isValidTarget(math.huge, true, player.pos) and enemy.isTargetableToTeamFlags and enemy.isTargetable) or stasisTime > 0 or self:invisibleValid(enemy, math.huge))
 			if not validTarget then goto continue end
@@ -1291,7 +1292,11 @@ cb.add(cb.load, function()
 					particleOwner = particleOwner.asAIBase
 				end
 				if value.teleport then
-					value.castingPos = value.target.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
+					if value.target then
+						value.castingPos = value.obj.pos:extend(value.nexusPos, value.target.boundingRadius+particleOwner.boundingRadius)
+					else
+						value.castingPos = value.obj.pos
+					end
 				end
 				if value.zedR then
 					value.castingPos = value.target.pos + (particleOwner.direction * (value.target.boundingRadius+particleOwner.boundingRadius))
