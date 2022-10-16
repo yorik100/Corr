@@ -308,7 +308,7 @@ cb.add(cb.load, function()
 		mm.misc:boolean('q_stasis', 'Auto Q release on stasis', true)
 		mm.misc:boolean('e_casting', 'Auto E on spellcast/attack', true)
 		mm.misc:boolean('w_casting', 'Auto W on spellcast/attack', true)
-		mm.misc:boolean('q_casting', 'Auto Q on spellcast/attack', true)
+		mm.misc:boolean('q_casting', 'Auto Q release on spellcast/attack', true)
 		mm.misc:boolean('e_particle', 'Auto E on particles', true)
 		mm.misc:boolean('w_particle', 'Auto W on particles', true)
 		mm.misc:boolean('q_particle', 'Auto W release on particles', true)
@@ -1612,14 +1612,14 @@ cb.add(cb.load, function()
 		end
 		if self.XerathMenu.drawings.draw_q_target:get() and QTarget then
 			if QTarget.isValid and not QTarget.isDead then
-				graphics.drawCircle(QTarget.pos, 100, 2, graphics.argb(255, 255, 127, 0))
-				graphics.drawCircle(QTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 127, 0))
+				graphics.drawCircle(QTarget.pos, 50 + QTarget.boundingRadius, 2, graphics.argb(255, 255, 127, 0))
+				graphics.drawCircle(QTarget.pos, (250*-game.time) % 50 + QTarget.boundingRadius, 2, graphics.argb(255, 255, 127, 0))
 			end
 		end
 		if self.XerathMenu.drawings.draw_r_target:get() and RTarget then
 			if RTarget.isValid and not RTarget.isDead then
-				graphics.drawCircle(RTarget.pos, 100, 2, graphics.argb(255, 255, 0, 0))
-				graphics.drawCircle(RTarget.pos, (250*-game.time) % 100, 2, graphics.argb(255, 255, 0, 0))
+				graphics.drawCircle(RTarget.pos, 50 + RTarget.boundingRadius, 2, graphics.argb(255, 255, 0, 0))
+				graphics.drawCircle(RTarget.pos, (250*-game.time) % 50 + RTarget.boundingRadius, 2, graphics.argb(255, 255, 0, 0))
 			end
 		end
 		if self.XerathMenu.drawings.draw_r_range_minimap:get() then
