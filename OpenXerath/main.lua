@@ -780,10 +780,10 @@ cb.add(cb.load, function()
 		end
 		table.remove(debugList, #debugList)
 		-- if (object.isEffectEmitter) then
-		-- print(object.name)
-		-- print(object.asEffectEmitter.attachment.object and object.asEffectEmitter.attachment.object.name or "")
-		-- print(object.asEffectEmitter.targetAttachment.object and object.asEffectEmitter.targetAttachment.object.name or "")
-		-- print("---------------------")
+			-- print(object.name)
+			-- print(object.asEffectEmitter.attachment.object and object.asEffectEmitter.attachment.object.name or "")
+			-- print(object.asEffectEmitter.targetAttachment.object and object.asEffectEmitter.targetAttachment.object.name or "")
+			-- print("---------------------")
 		-- end
 	end
 
